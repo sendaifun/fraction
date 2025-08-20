@@ -1,4 +1,4 @@
-# SolSplits
+# SendSplits
 
 A secure, automated token distribution system built on Solana that splits funds among multiple participants with a fixed bot incentive.
 
