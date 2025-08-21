@@ -86,8 +86,6 @@ impl<'info> WithdrawShare<'info> {
         );
 
         transfer_checked(transfer_ctx, withdraw_amount, self.treasury_mint.decimals)?;
-
-        msg!("Withdrew {} tokens for participant {}", withdraw_amount, participant_balance.participant);
         Ok(())
     }
 }

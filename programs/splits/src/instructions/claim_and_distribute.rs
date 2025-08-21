@@ -87,6 +87,7 @@ pub struct ClaimAndDistribute<'info> {
     pub bot_wallet: Signer<'info>,
 
     pub token_program: Interface<'info, TokenInterface>,
+    
 }
 
 impl<'info> ClaimAndDistribute<'info> {
@@ -166,9 +167,6 @@ impl<'info> ClaimAndDistribute<'info> {
 
         // Reset total collected
         self.splitter_config.total_collected = 0;
-
-        msg!("Distributed {} tokens: Bot got {}, Participants got {}", 
-             total_amount, bot_amount, participant_amount);
         Ok(())
     }
 }

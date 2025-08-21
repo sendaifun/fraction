@@ -28,8 +28,6 @@ impl<'info> UpdateSplitter<'info> {
         let splitter_config = &mut self.splitter_config;
         splitter_config.participants = participants;
         splitter_config.bot_wallet = bot_wallet;
-
-        msg!("Splitter updated: {}", splitter_config.name);
         Ok(())
     }
 }

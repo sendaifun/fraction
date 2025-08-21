@@ -8,11 +8,11 @@ use crate::errors::*;
 
 #[derive(Accounts)]
 #[instruction(
-    name: String, 
-    participants: [Participant; 5], 
+    name: String, //Not Using as Seeds
+    participants: [Participant; 5],
     treasury_mint: Pubkey, 
     bot_wallet: Pubkey,
-    participant_wallet_0: Pubkey,
+    participant_wallet_0: Pubkey,//Each participant needs to pass there Wallet for Onchain Participant Balance Accounts
     participant_wallet_1: Pubkey,
     participant_wallet_2: Pubkey,
     participant_wallet_3: Pubkey,
@@ -40,6 +40,7 @@ pub struct InitializeSplitter<'info> {
     )]
     pub treasury: InterfaceAccount<'info, TokenAccount>,
 
+    //Can be Any Mint (Token2022)
     pub treasury_mint: InterfaceAccount<'info, Mint>,
 
     // Participant balances use participant wallet-based seeds
@@ -121,7 +122,7 @@ impl<'info> InitializeSplitter<'info> {
         // Set the splitter config using set_inner
         self.splitter_config.set_inner(SplitterConfig {
             authority: self.authority.key(),
-            name: name.clone(),
+            name: name,//avoided expensive operation
             participants,
             treasury_mint,
             bot_wallet,
@@ -131,6 +132,7 @@ impl<'info> InitializeSplitter<'info> {
         });
 
         // Initialize ParticipantBalance accounts using set_inner
+        // Initialization is Done in an Order
         for i in 0..5 {
             let participant_balance = match i {
                 0 => &mut self.participant_balance_0,
@@ -156,8 +158,6 @@ impl<'info> InitializeSplitter<'info> {
             amount: 0,
             bump: self.bot_balance.bump,
         });
-
-        msg!("Splitter initialized: {}", name);
         Ok(())
     }
 }

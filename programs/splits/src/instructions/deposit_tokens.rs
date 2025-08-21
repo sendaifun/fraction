@@ -57,8 +57,6 @@ impl<'info> DepositTokens<'info> {
         // Update total collected amount
         self.splitter_config.total_collected = self.splitter_config.total_collected.checked_add(amount)
             .ok_or(SplitsError::ArithmeticOverflow)?;
-
-        msg!("Deposited {} tokens into splitter treasury", amount);
         Ok(())
     }
 }
