@@ -26,8 +26,8 @@ describe("Splits Program", () => {
   const connection = provider.connection as Connection;
   const wallet = provider.wallet as anchor.Wallet;
 
-  // Test accounts
-  let authority: Keypair;
+  // Test accounts - using existing wallet instead of generating new ones
+  let authority: anchor.Wallet;
   let botWallet: Keypair;
   let participants: Keypair[];
   let testMint: PublicKey;
@@ -45,8 +45,8 @@ describe("Splits Program", () => {
   let currentBotWallet: Keypair;
 
   before(async () => {
-    // Generate test keypairs
-    authority = Keypair.generate();
+    // Use existing wallet as authority instead of generating new keypair
+    authority = wallet;
     botWallet = Keypair.generate();
     participants = Array.from({ length: 5 }, () => Keypair.generate());
 
@@ -95,9 +95,7 @@ describe("Splits Program", () => {
       1000000000
     );
 
-    // Fund authority with SOL
-    const fundTx = await connection.requestAirdrop(authority.publicKey, 2 * LAMPORTS_PER_SOL);
-    await connection.confirmTransaction(fundTx);
+    // No need to airdrop - authority already has SOL from existing wallet
 
     // Setup shared test infrastructure
     sharedSplitterName = "main_test";
@@ -163,7 +161,7 @@ describe("Splits Program", () => {
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
         })
-        .signers([authority])
+        .signers([])
         .rpc();
 
       console.log("Initialize successful:", tx);
@@ -196,7 +194,7 @@ describe("Splits Program", () => {
           authority: authority.publicKey,
           splitterConfig: sharedSplitterConfigPda,
         })
-        .signers([authority])
+        .signers([])
         .rpc();
 
       console.log("Update successful:", updateTx);
@@ -227,7 +225,7 @@ describe("Splits Program", () => {
           user: authority.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
         })
-        .signers([authority])
+        .signers([])
         .rpc();
 
       console.log("Deposit successful:", depositTx);
@@ -255,7 +253,7 @@ describe("Splits Program", () => {
           user: authority.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
         })
-        .signers([authority])
+        .signers([])
         .rpc();
 
       // Get initial state
@@ -333,7 +331,7 @@ describe("Splits Program", () => {
           participantTokenAccount: participantAta,
           tokenProgram: TOKEN_PROGRAM_ID,
         })
-        .signers([participant, authority])
+        .signers([participant])
         .rpc();
 
       console.log("Withdrawal successful:", withdrawTx);
@@ -443,7 +441,7 @@ describe("Splits Program", () => {
           user: authority.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
         })
-        .signers([authority])
+        .signers([])
         .rpc();
 
       // Verify minimal deposit was recorded
@@ -508,7 +506,7 @@ describe("Splits Program", () => {
           user: authority.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
         })
-        .signers([authority])
+        .signers([])
         .rpc();
 
       // Second deposit
@@ -522,7 +520,7 @@ describe("Splits Program", () => {
           user: authority.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
         })
-        .signers([authority])
+        .signers([])
         .rpc();
 
       // Verify cumulative total
@@ -559,7 +557,7 @@ describe("Splits Program", () => {
           participantTokenAccount: wrongParticipantAta.address,
           tokenProgram: TOKEN_PROGRAM_ID,
         })
-        .signers([wrongParticipant, authority])
+        .signers([wrongParticipant])
         .rpc();
 
       throw new Error("Should have failed with wrong participant");
@@ -591,7 +589,7 @@ describe("Splits Program", () => {
           participantTokenAccount: participantAta,
           tokenProgram: TOKEN_PROGRAM_ID,
         })
-        .signers([participant, authority])
+        .signers([participant])
         .rpc();
 
       // Verify second withdrawal
@@ -620,7 +618,7 @@ describe("Splits Program", () => {
           user: authority.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
         })
-        .signers([authority])
+        .signers([])
         .rpc();
 
       const initialBotBalance = await getAccount(connection, botTokenAta);
@@ -679,7 +677,7 @@ describe("Splits Program", () => {
           user: authority.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
         })
-        .signers([authority])
+        .signers([])
         .rpc();
 
       // Verify treasury balance increased
@@ -717,7 +715,7 @@ describe("Splits Program", () => {
           user: authority.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
         })
-        .signers([authority])
+        .signers([])
         .rpc();
 
       // 3. Distribute
