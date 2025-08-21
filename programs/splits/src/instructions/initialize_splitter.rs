@@ -116,6 +116,12 @@ impl<'info> InitializeSplitter<'info> {
         _participant_wallet_3: Pubkey,
         _participant_wallet_4: Pubkey,
     ) -> Result<()> {
+        // Validate name length
+        require!(
+            name.len() <= SplitterConfig::MAX_NAME_LENGTH,
+            SplitsError::NameTooLong
+        );
+
         let total_shares: u32 = participants.iter().map(|p| p.share_bps as u32).sum();
         require!(total_shares == 10_000, SplitsError::InvalidShareDistribution);
 
