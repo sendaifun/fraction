@@ -11,7 +11,7 @@ pub use errors::*;
 
 // FIX: Removed `declare_program!`, as it's deprecated and not needed.
 // The program ID for the current program is declared below.
-declare_id!("AXTUsPAQnRh2n1ZJDzNsbZgQDFhavFivMRtLHiMftVaB");
+declare_id!("BWjBnoh7LE3Cogedykt8QJL6rMV817DNr2M8X1YLXhwH");
 
 #[program]
 pub mod splits {

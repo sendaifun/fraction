@@ -119,6 +119,52 @@ impl<'info> InitializeSplitter<'info> {
         let total_shares: u32 = participants.iter().map(|p| p.share_bps as u32).sum();
         require!(total_shares == 10_000, SplitsError::InvalidShareDistribution);
 
+        //Just Validate the Individual Wallets
+        require!(
+            _participant_wallet_0 == participants[0].wallet,
+            SplitsError::ParticipantWalletMismatch
+        );
+        require!(
+            _participant_wallet_1 == participants[1].wallet,
+            SplitsError::ParticipantWalletMismatch
+        );
+        require!(
+            _participant_wallet_2 == participants[2].wallet,
+            SplitsError::ParticipantWalletMismatch
+        );
+        require!(
+            _participant_wallet_3 == participants[3].wallet,
+            SplitsError::ParticipantWalletMismatch
+        );
+        require!(
+            _participant_wallet_4 == participants[4].wallet,
+            SplitsError::ParticipantWalletMismatch
+        );
+
+        // Check for duplicate participant wallets
+        let participant_wallets = [
+            participants[0].wallet,
+            participants[1].wallet,
+            participants[2].wallet,
+            participants[3].wallet,
+            participants[4].wallet,
+        ];
+        
+        for i in 0..5 {
+            for j in (i + 1)..5 {
+                require!(
+                    participant_wallets[i] != participant_wallets[j],
+                    SplitsError::DuplicateParticipantWallet
+                );
+            }
+        }
+
+        // Ensure bot wallet is not one of the participant wallets
+        require!(
+            !participant_wallets.contains(&bot_wallet),
+            SplitsError::BotWalletConflict
+        );
+
         // Set the splitter config using set_inner
         self.splitter_config.set_inner(SplitterConfig {
             authority: self.authority.key(),

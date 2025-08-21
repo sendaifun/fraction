@@ -15,7 +15,7 @@ splits = "AXTUsPAQnRh2n1ZJDzNsbZgQDFhavFivMRtLHiMftVaB"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
+cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

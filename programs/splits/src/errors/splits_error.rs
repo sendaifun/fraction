@@ -18,4 +18,10 @@ pub enum SplitsError {
     ArithmeticOverflow,
     #[msg("Invalid participant wallet")]
     InvalidParticipantWallet,
+    #[msg("Participant wallet mismatch - individual wallet parameters must match participants array")]
+    ParticipantWalletMismatch,
+    #[msg("Duplicate participant wallet detected")]
+    DuplicateParticipantWallet,
+    #[msg("Bot wallet cannot be the same as any participant wallet")]
+    BotWalletConflict,
 }
