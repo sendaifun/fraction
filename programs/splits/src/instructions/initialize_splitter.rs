@@ -40,7 +40,6 @@ pub struct InitializeSplitter<'info> {
     )]
     pub treasury: InterfaceAccount<'info, TokenAccount>,
 
-    //Can be Any Mint (Token2022)
     pub treasury_mint: InterfaceAccount<'info, Mint>,
 
     // Participant balances use participant wallet-based seeds
