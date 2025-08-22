@@ -76,7 +76,7 @@ pub struct ClaimAndDistribute<'info> {
 
     #[account(
         mut,
-        seeds = [b"bot_balance", splitter_config.key().as_ref()],
+        seeds = [b"bot_balance", splitter_config.key().as_ref(), splitter_config.bot_wallet.as_ref()],
         bump,
         constraint = bot_balance.splitter == splitter_config.key()
     )]
