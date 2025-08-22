@@ -92,6 +92,13 @@ pub struct ClaimAndDistribute<'info> {
 
 impl<'info> ClaimAndDistribute<'info> {
     pub fn claim_and_distribute(&mut self) -> Result<()> {
+        // Read the actual treasury balance since deposits are now done via direct transfers
+        let actual_treasury_balance = self.treasury.amount;
+        require!(actual_treasury_balance > 0, SplitsError::NoFundsToDistribute);
+        
+        // Update total_collected to match the actual treasury balance
+        self.splitter_config.total_collected = actual_treasury_balance;
+        
         let total_amount = self.splitter_config.total_collected;
         require!(total_amount > 0, SplitsError::NoFundsToDistribute);
 

@@ -7,7 +7,8 @@ import {
   mintTo,
   TOKEN_PROGRAM_ID,
   getAccount,
-  getAssociatedTokenAddress
+  getAssociatedTokenAddress,
+  transfer
 } from "@solana/spl-token";
 import { 
   SystemProgram, 
@@ -43,6 +44,19 @@ describe("Splits Program", () => {
   let sharedBotBalancePda: PublicKey;
   let sharedTestParticipants: any[];
   let currentBotWallet: Keypair;
+
+  // Helper function for direct token transfers (replaces deposit instruction)
+  async function transferToTreasury(amount: number, fromTokenAccount: PublicKey) {
+    const tx = await transfer(
+      connection,
+      wallet.payer,
+      fromTokenAccount,
+      sharedTreasuryPda,
+      wallet.payer,
+      amount
+    );
+    return tx;
+  }
 
   before(async () => {
     // Use existing wallet as authority instead of generating new keypair
@@ -215,24 +229,12 @@ describe("Splits Program", () => {
     try {
       const depositAmount = 1000000;
       
-      const depositTx = await program.methods
-        .depositTokens(new anchor.BN(depositAmount))
-        .accountsPartial({
-          splitterConfig: sharedSplitterConfigPda,
-          treasury: sharedTreasuryPda,
-          treasuryMint: testMint,
-          userTokenAccount: authorityTokenAta,
-          user: authority.publicKey,
-          tokenProgram: TOKEN_PROGRAM_ID,
-        })
-        .signers([])
-        .rpc();
+      const depositTx = await transferToTreasury(depositAmount, authorityTokenAta);
 
       console.log("Deposit successful:", depositTx);
 
-      // Verify
-      const splitterConfig = await program.account.splitterConfig.fetch(sharedSplitterConfigPda);
-      expect(splitterConfig.totalCollected.eq(new anchor.BN(depositAmount))).to.be.true;
+      // Note: totalCollected is not automatically updated with direct transfers
+      // It will be updated when claimAndDistribute is called
     } catch (error) {
       console.error("Deposit error:", error);
       throw error;
@@ -243,18 +245,7 @@ describe("Splits Program", () => {
     try {
       // Additional deposit
       const additionalDepositAmount = 2000000;
-      await program.methods
-        .depositTokens(new anchor.BN(additionalDepositAmount))
-        .accountsPartial({
-          splitterConfig: sharedSplitterConfigPda,
-          treasury: sharedTreasuryPda,
-          treasuryMint: testMint,
-          userTokenAccount: authorityTokenAta,
-          user: authority.publicKey,
-          tokenProgram: TOKEN_PROGRAM_ID,
-        })
-        .signers([])
-        .rpc();
+      await transferToTreasury(additionalDepositAmount, authorityTokenAta);
 
       // Get initial state
       const initialSplitterConfig = await program.account.splitterConfig.fetch(sharedSplitterConfigPda);
@@ -285,11 +276,20 @@ describe("Splits Program", () => {
       // Verify distribution
       const finalBotBalance = await getAccount(connection, botTokenAta);
       const finalSplitterConfig = await program.account.splitterConfig.fetch(sharedSplitterConfigPda);
-      const totalDistributed = initialSplitterConfig.totalCollected.toNumber();
-      const expectedBotAmount = Math.floor(totalDistributed * 0.02);
+      const finalTreasury = await getAccount(connection, sharedTreasuryPda);
+      
+      // Since we're now reading actual treasury balance, we need to calculate based on that
+      // The contract reads the actual treasury balance, which includes all previous deposits
+      // From the first test: 1,000,000 tokens were deposited
+      // From this test: 2,000,000 additional tokens were deposited
+      // Total: 3,000,000 tokens
+      const totalDistributed = 1000000 + additionalDepositAmount; // 3,000,000
+      const expectedBotAmount = Math.floor(totalDistributed * 0.02); // 60,000
       
       expect(finalBotBalance.amount - initialBotBalance.amount).to.equal(BigInt(expectedBotAmount));
       expect(finalSplitterConfig.totalCollected.eq(new anchor.BN(0))).to.be.true;
+      // Treasury should contain participant shares (not empty) since tokens stay until withdrawal
+      expect(finalTreasury.amount > BigInt(0)).to.be.true;
 
       // Verify participant balances
       const actualParticipantShares = finalSplitterConfig.participants.map(p => p.shareBps);
@@ -431,23 +431,11 @@ describe("Splits Program", () => {
     try {
       const minimalDeposit = 1; // 1 lamport equivalent
       
-      await program.methods
-        .depositTokens(new anchor.BN(minimalDeposit))
-        .accountsPartial({
-          splitterConfig: sharedSplitterConfigPda,
-          treasury: sharedTreasuryPda,
-          treasuryMint: testMint,
-          userTokenAccount: authorityTokenAta,
-          user: authority.publicKey,
-          tokenProgram: TOKEN_PROGRAM_ID,
-        })
-        .signers([])
-        .rpc();
+      await transferToTreasury(minimalDeposit, authorityTokenAta);
 
-      // Verify minimal deposit was recorded
-      const splitterConfig = await program.account.splitterConfig.fetch(sharedSplitterConfigPda);
-      const currentTotal = splitterConfig.totalCollected.toNumber();
-      expect(currentTotal).to.be.greaterThan(0);
+      // Verify minimal deposit was transferred to treasury
+      const treasuryBalance = await getAccount(connection, sharedTreasuryPda);
+      expect(treasuryBalance.amount > BigInt(0)).to.be.true;
 
       console.log("Minimal deposit handled correctly:", minimalDeposit);
     } catch (error) {
@@ -491,44 +479,22 @@ describe("Splits Program", () => {
       const deposit1 = 500000;
       const deposit2 = 750000;
       
-      // Get initial total collected
-      const initialConfig = await program.account.splitterConfig.fetch(sharedSplitterConfigPda);
-      const initialTotal = initialConfig.totalCollected.toNumber();
+      // Get initial treasury balance
+      const initialTreasury = await getAccount(connection, sharedTreasuryPda);
+      const initialTotal = initialTreasury.amount;
       
       // First deposit
-      await program.methods
-        .depositTokens(new anchor.BN(deposit1))
-        .accountsPartial({
-          splitterConfig: sharedSplitterConfigPda,
-          treasury: sharedTreasuryPda,
-          treasuryMint: testMint,
-          userTokenAccount: authorityTokenAta,
-          user: authority.publicKey,
-          tokenProgram: TOKEN_PROGRAM_ID,
-        })
-        .signers([])
-        .rpc();
+      await transferToTreasury(deposit1, authorityTokenAta);
 
       // Second deposit
-      await program.methods
-        .depositTokens(new anchor.BN(deposit2))
-        .accountsPartial({
-          splitterConfig: sharedSplitterConfigPda,
-          treasury: sharedTreasuryPda,
-          treasuryMint: testMint,
-          userTokenAccount: authorityTokenAta,
-          user: authority.publicKey,
-          tokenProgram: TOKEN_PROGRAM_ID,
-        })
-        .signers([])
-        .rpc();
+      await transferToTreasury(deposit2, authorityTokenAta);
 
-      // Verify cumulative total
-      const splitterConfig = await program.account.splitterConfig.fetch(sharedSplitterConfigPda);
-      const expectedTotal = initialTotal + deposit1 + deposit2;
-      expect(splitterConfig.totalCollected.toNumber()).to.equal(expectedTotal);
+      // Verify cumulative total in treasury (totalCollected is not updated with direct transfers)
+      const treasuryBalance = await getAccount(connection, sharedTreasuryPda);
+      const expectedTreasuryTotal = initialTotal + BigInt(deposit1) + BigInt(deposit2);
+      expect(treasuryBalance.amount).to.equal(expectedTreasuryTotal);
 
-      console.log("Multiple deposits verified - Total:", expectedTotal);
+      console.log("Multiple deposits verified - Total:", expectedTreasuryTotal);
     } catch (error) {
       console.error("Multiple deposits error:", error);
       throw error;
@@ -608,18 +574,7 @@ describe("Splits Program", () => {
       // Make a new deposit and distribute
       const testDeposit = 1000000;
       
-      await program.methods
-        .depositTokens(new anchor.BN(testDeposit))
-        .accountsPartial({
-          splitterConfig: sharedSplitterConfigPda,
-          treasury: sharedTreasuryPda,
-          treasuryMint: testMint,
-          userTokenAccount: authorityTokenAta,
-          user: authority.publicKey,
-          tokenProgram: TOKEN_PROGRAM_ID,
-        })
-        .signers([])
-        .rpc();
+      await transferToTreasury(testDeposit, authorityTokenAta);
 
       const initialBotBalance = await getAccount(connection, botTokenAta);
       
@@ -667,18 +622,7 @@ describe("Splits Program", () => {
       
       // Make a deposit
       const depositAmount = 500000;
-      await program.methods
-        .depositTokens(new anchor.BN(depositAmount))
-        .accountsPartial({
-          splitterConfig: sharedSplitterConfigPda,
-          treasury: sharedTreasuryPda,
-          treasuryMint: testMint,
-          userTokenAccount: authorityTokenAta,
-          user: authority.publicKey,
-          tokenProgram: TOKEN_PROGRAM_ID,
-        })
-        .signers([])
-        .rpc();
+      await transferToTreasury(depositAmount, authorityTokenAta);
 
       // Verify treasury balance increased
       const newTreasuryBalance = await getAccount(connection, sharedTreasuryPda);
@@ -705,18 +649,7 @@ describe("Splits Program", () => {
       
       // 2. Make final deposit
       const finalDeposit = 1000000;
-      await program.methods
-        .depositTokens(new anchor.BN(finalDeposit))
-        .accountsPartial({
-          splitterConfig: sharedSplitterConfigPda,
-          treasury: sharedTreasuryPda,
-          treasuryMint: testMint,
-          userTokenAccount: authorityTokenAta,
-          user: authority.publicKey,
-          tokenProgram: TOKEN_PROGRAM_ID,
-        })
-        .signers([])
-        .rpc();
+      await transferToTreasury(finalDeposit, authorityTokenAta);
 
       // 3. Distribute
       await program.methods
@@ -742,7 +675,9 @@ describe("Splits Program", () => {
       const finalConfig = await program.account.splitterConfig.fetch(sharedSplitterConfigPda);
       const finalTreasury = await getAccount(connection, sharedTreasuryPda);
       
+      // After distribution, totalCollected should be 0 but treasury contains participant shares
       expect(finalConfig.totalCollected.eq(new anchor.BN(0))).to.be.true;
+      expect(finalTreasury.amount > BigInt(0)).to.be.true; // Treasury contains participant shares
       console.log("Full lifecycle completed successfully");
       console.log("Final treasury balance:", finalTreasury.amount.toString());
       
