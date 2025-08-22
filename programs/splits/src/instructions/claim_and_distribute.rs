@@ -1,30 +1,31 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     token_interface::{Mint, TokenAccount, TokenInterface, TransferChecked, transfer_checked},
+    associated_token::AssociatedToken,
 };
 use crate::states::*;
 use crate::errors::*;
 
 #[derive(Accounts)]
 pub struct ClaimAndDistribute<'info> {
+    pub authority: Signer<'info>,
     #[account(
         mut,
-        seeds = [b"splitter_config", splitter_config.authority.as_ref()],
+        seeds = [b"splitter_config", splitter_config.authority.as_ref(), splitter_config.name.as_ref()],
         bump,
+        has_one = authority
     )]
     pub splitter_config: Box<Account<'info, SplitterConfig>>,
 
     #[account(
-        mut,
+        init,
+        payer = bot_wallet, // Added missing payer
         associated_token::mint = treasury_mint,
         associated_token::authority = splitter_config,
         associated_token::token_program = token_program,
     )]
     pub treasury: InterfaceAccount<'info, TokenAccount>,
 
-    #[account(
-        constraint = treasury_mint.key() == splitter_config.treasury_mint
-    )]
     pub treasury_mint: InterfaceAccount<'info, Mint>,
 
     #[account(
@@ -82,12 +83,15 @@ pub struct ClaimAndDistribute<'info> {
     pub bot_balance: Box<Account<'info, ParticipantBalance>>,
 
     #[account(
+        mut,
         constraint = bot_wallet.key() == splitter_config.bot_wallet
     )]
     pub bot_wallet: Signer<'info>,
 
     pub token_program: Interface<'info, TokenInterface>,
     
+    pub system_program: Program<'info, System>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
 impl<'info> ClaimAndDistribute<'info> {

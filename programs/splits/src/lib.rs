@@ -21,7 +21,6 @@ pub mod splits {
         ctx: Context<InitializeSplitter>,
         name: String,
         participants: [Participant; 5],
-        treasury_mint: Pubkey,
         bot_wallet: Pubkey,
         participant_wallet_0: Pubkey,
         participant_wallet_1: Pubkey,
@@ -32,7 +31,6 @@ pub mod splits {
         ctx.accounts.initialize_splitter(
             name, 
             participants, 
-            treasury_mint, 
             bot_wallet,
             participant_wallet_0,
             participant_wallet_1,

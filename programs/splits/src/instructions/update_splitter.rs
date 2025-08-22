@@ -8,7 +8,7 @@ pub struct UpdateSplitter<'info> {
     
     #[account(
         mut,
-        seeds = [b"splitter_config", authority.key().as_ref()],
+        seeds = [b"splitter_config", authority.key().as_ref(), splitter_config.name.as_ref()],
         bump,
         has_one = authority
     )]

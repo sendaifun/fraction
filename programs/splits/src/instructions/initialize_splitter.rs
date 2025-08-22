@@ -1,16 +1,11 @@
 use anchor_lang::prelude::*;
-use anchor_spl::{
-    associated_token::AssociatedToken,
-    token_interface::{Mint, TokenAccount, TokenInterface},
-};
 use crate::states::*;
 use crate::errors::*;
 
 #[derive(Accounts)]
 #[instruction(
-    name: String, //Not Using as Seeds
+    name: String, //Using as Seeds
     participants: [Participant; 5],
-    treasury_mint: Pubkey, 
     bot_wallet: Pubkey,
     participant_wallet_0: Pubkey,//Each participant needs to pass there Wallet for Onchain Participant Balance Accounts
     participant_wallet_1: Pubkey,
@@ -26,21 +21,10 @@ pub struct InitializeSplitter<'info> {
         init,
         payer = authority,
         space = SplitterConfig::LEN,
-        seeds = [b"splitter_config", authority.key().as_ref()],
+        seeds = [b"splitter_config", authority.key().as_ref(),name.as_ref()],
         bump
     )]
     pub splitter_config: Box<Account<'info, SplitterConfig>>,
-
-    #[account(
-        init,
-        payer = authority,
-        associated_token::mint = treasury_mint,
-        associated_token::authority = splitter_config,
-        associated_token::token_program = token_program,
-    )]
-    pub treasury: InterfaceAccount<'info, TokenAccount>,
-
-    pub treasury_mint: InterfaceAccount<'info, Mint>,
 
     // Participant balances use participant wallet-based seeds
     #[account(
@@ -92,14 +76,12 @@ pub struct InitializeSplitter<'info> {
         init,
         payer = authority,
         space = ParticipantBalance::LEN,
-        seeds = [b"bot_balance", splitter_config.key().as_ref()],
+        seeds = [b"bot_balance", splitter_config.key().as_ref(),bot_wallet.as_ref()],
         bump
     )]
     pub bot_balance: Box<Account<'info, ParticipantBalance>>,
 
     pub system_program: Program<'info, System>,
-    pub token_program: Interface<'info, TokenInterface>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
 impl<'info> InitializeSplitter<'info> {
@@ -107,8 +89,7 @@ impl<'info> InitializeSplitter<'info> {
         &mut self,
         name: String,
         participants: [Participant; 5],
-        treasury_mint: Pubkey,
-        bot_wallet: Pubkey,
+        bot_wallet: Pubkey, 
         _participant_wallet_0: Pubkey,
         _participant_wallet_1: Pubkey,
         _participant_wallet_2: Pubkey,
@@ -175,7 +156,6 @@ impl<'info> InitializeSplitter<'info> {
             authority: self.authority.key(),
             name: name,//avoided expensive operation
             participants,
-            treasury_mint,
             bot_wallet,
             incentive_bps: 200u8,
             total_collected: 0,
