@@ -50,13 +50,6 @@ pub mod splits {
         ctx.accounts.update_splitter(participants, bot_wallet)
     }
 
-    pub fn deposit_tokens(
-        ctx: Context<DepositTokens>,
-        amount: u64,
-    ) -> Result<()> {
-        ctx.accounts.deposit_tokens(amount)
-    }
-
     pub fn claim_and_distribute(
         ctx: Context<ClaimAndDistribute>,
     ) -> Result<()> {
