@@ -1,10 +1,10 @@
-# SendSplits
+# Fraction
 
 A secure, automated token distribution system built on Solana that splits funds among multiple participants with a fixed bot incentive.
 
 ## 🌟 Overview
 
-SolSplits is a Solana program that enables automated token distribution among multiple participants. Users can deposit tokens into a shared treasury, and a bot triggers distribution where participants receive their allocated shares and the bot earns a fixed 2% incentive for managing the distribution.
+Fraction is a Solana program that enables automated token distribution among multiple participants. Users can deposit tokens into a shared treasury, and a bot triggers distribution where participants receive their allocated shares and the bot earns a fixed 2% incentive for managing the distribution.
 
 ## ✨ Key Features
 
@@ -130,7 +130,7 @@ pub struct ParticipantBalance {
 1. **Clone the repository**
 ```bash
 git clone <repository-url>
-cd solsplits
+cd Fraction
 ```
 
 2. **Install dependencies**
@@ -177,10 +177,10 @@ For detailed test explanations, see [test_summary.md](./test_summary.md).
 ```typescript
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
-import { SolSplits } from "./target/types/solsplits";
+import { Fraction } from "./target/types/Fraction";
 
 // Initialize program
-const program = anchor.workspace.SolSplits as Program<SolSplits>;
+const program = anchor.workspace.Fraction as Program<Fraction>;
 
 // Create a new splitter
 const participants = [
@@ -259,13 +259,13 @@ await program.methods
 ```bash
 # Anchor.toml
 [programs.localnet]
-solsplits = "YOUR_PROGRAM_ID"
+Fraction = "YOUR_PROGRAM_ID"
 
 [programs.devnet]
-solsplits = "YOUR_PROGRAM_ID"
+Fraction = "YOUR_PROGRAM_ID"
 
 [programs.mainnet]
-solsplits = "YOUR_PROGRAM_ID"
+Fraction = "YOUR_PROGRAM_ID"
 ```
 
 ### Program Constants
@@ -341,7 +341,7 @@ This software is provided "as is" without warranty. Users should conduct thoroug
 For questions, issues, or contributions:
 - Open an issue on GitHub
 - Join our Discord community
-- Email: support@solsplits.com
+- Email: support@Fraction.com
 
 ---
 

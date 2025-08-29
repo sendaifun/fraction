@@ -1,8 +1,8 @@
-# SolSplits - Project Flow Documentation
+# Fraction - Project Flow Documentation
 
 ## 🔄 Complete System Flow Overview
 
-This document outlines the complete flow of the SolSplits system, from initial setup to final fund distribution and withdrawal.
+This document outlines the complete flow of the Fraction system, from initial setup to final fund distribution and withdrawal.
 
 ## 📋 Flow Summary
 
