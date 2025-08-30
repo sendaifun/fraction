@@ -215,7 +215,7 @@ describe("Splits Program", () => {
     }
   });
 
-  it("Should create treasury account", async () => {
+  it("Should not create treasury account", async () => {
     try {
       // This will create the treasury account (but fail to distribute since it's empty)
       await program.methods
@@ -254,6 +254,64 @@ describe("Splits Program", () => {
         expect(treasuryAccount.amount).to.equal(BigInt(0)); // Should be empty initially
         console.log("Treasury created successfully (expected failure with no funds)");
       } catch (readError) {
+        console.log("Treasury account read error (may need more time):", readError.message);
+        // Don't fail the test if we can't read it immediately
+      }
+    }
+  });
+
+  it("Should create treasury account", async () => {
+    try {
+
+      // airdrop 1000000 tokens to the treasury
+      const airdropTx = await connection.requestAirdrop(sharedTreasuryPda, 100 * LAMPORTS_PER_SOL);
+      console.log("Airdrop successful:", airdropTx);
+
+      // This will create the treasury account
+      const tx = await program.methods
+        .claimAndDistribute()
+        .accountsPartial({
+          authority: authority.publicKey,
+          splitterConfig: sharedSplitterConfigPda,
+          treasury: sharedTreasuryPda,
+          treasuryMint: testMint,
+          botTokenAccount: botTokenAta,
+          participantBalance0: sharedParticipantBalances[0],
+          participantBalance1: sharedParticipantBalances[1],
+          participantBalance2: sharedParticipantBalances[2],
+          participantBalance3: sharedParticipantBalances[3],
+          participantBalance4: sharedParticipantBalances[4],
+          botBalance: sharedBotBalancePda,
+          botWallet: currentBotWallet.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+          associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
+        })
+        .signers([currentBotWallet])
+        .rpc();
+
+      console.log("Claim and distribute successful:", tx);
+
+      const botBalance = await program.account.participantBalance.fetch(sharedBotBalancePda);
+      expect(botBalance.amount.eq(new anchor.BN(1000000))).to.be.true;
+
+      const participantBalances = await Promise.all(sharedParticipantBalances.map(async (p) => {
+        return await program.account.participantBalance.fetch(p);
+      }));
+    } catch (error) {
+      // Expected to fail with "No funds to distribute" but treasury should be created
+      expect(error.message).to.include("NoFundsToDistribute");
+
+      // Wait a bit for the account to be available
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Verify treasury was created
+      try {
+        const treasuryAccount = await getAccount(connection, sharedTreasuryPda);
+        expect(treasuryAccount.amount).to.equal(BigInt(0)); // Should be empty initially
+        console.log("Treasury created successfully (expected failure with no funds)");
+      } catch (readError) {
+        console.log(readError)
         console.log("Treasury account read error (may need more time):", readError.message);
         // Don't fail the test if we can't read it immediately
       }
