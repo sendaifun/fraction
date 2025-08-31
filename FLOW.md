@@ -12,21 +12,21 @@ This document outlines the complete flow of the Fraction system, from initial se
    ├── Configure Participants
    └── Set Bot Wallet
 
-2. Deposit Phase
-   ├── Users Deposit Tokens
-   ├── Treasury Accumulation
-   └── Track Total Collected
+2. Treasury Phase (Client-Side)
+   ├── Client Creates Treasury ATA
+   ├── Client Funds Treasury
+   └── Treasury Ready for Distribution
 
-3. Distribution Phase
+3. Distribution Phase (Bot-Only)
    ├── Bot Triggers Distribution
-   ├── Calculate Bot Incentive (2%)
-   ├── Distribute to Participants (98%)
-   └── Reset Total Collected
+   ├── Bot Gets 2% Immediately
+   ├── Participants Get Balance Records (98%)
+   └── Treasury Holds Participant Funds
 
 4. Withdrawal Phase
    ├── Participants Withdraw Shares
    ├── Reset Individual Balances
-   └── Update Treasury Balance
+   └── Treasury Emptied Gradually
 ```
 
 ---
@@ -39,40 +39,36 @@ This document outlines the complete flow of the Fraction system, from initial se
 
 **What Happens**:
 1. **Create SplitterConfig Account**
-   - Generate PDA using `[b"splitter_config", authority.key()]`
+   - Generate PDA using `[b"splitter_config", authority.key(), name.as_ref()]`
    - Store splitter configuration data
-   - Set initial participant shares (default: 20% each)
+   - Set participant shares (must total 10,000 BPS)
 
-2. **Create Treasury Account**
-   - Generate ATA for the specified mint
-   - Set splitter_config PDA as authority
-   - Initialize with 0 balance
-
-3. **Create Participant Balance Accounts**
+2. **Create Participant Balance Accounts**
    - Generate 5 PDAs using `[b"balance", splitter_config.key(), participant_wallet]`
    - Initialize each with 0 balance
    - Link to respective participant wallets
 
-4. **Create Bot Balance Account**
-   - Generate PDA using `[b"bot_balance", splitter_config.key()]`
+3. **Create Bot Balance Account**
+   - Generate PDA using `[b"bot_balance", splitter_config.key(), bot_wallet]`
    - Initialize with 0 balance
    - Track bot's earned incentives
+
+**Note**: Treasury is NOT created during initialization - it's handled client-side
 
 **Data Stored**:
 ```rust
 SplitterConfig {
-    name: "my_splitter",
     authority: authority_pubkey,
+    name: "my_splitter",
     participants: [
-        { wallet: participant1, shareBps: 2000 }, // 20%
-        { wallet: participant2, shareBps: 2000 }, // 20%
+        { wallet: participant1, shareBps: 3000 }, // 30%
+        { wallet: participant2, shareBps: 2500 }, // 25%
         { wallet: participant3, shareBps: 2000 }, // 20%
-        { wallet: participant4, shareBps: 2000 }, // 20%
-        { wallet: participant5, shareBps: 2000 }, // 20%
+        { wallet: participant4, shareBps: 1500 }, // 15%
+        { wallet: participant5, shareBps: 1000 }, // 10%
     ],
     botWallet: bot_wallet_pubkey,
-    treasuryMint: mint_pubkey,
-    totalCollected: 0,
+    totalCollected: 0, // Temporary during distribution
     incentiveBps: 200, // Fixed at 2%
     bump: pda_bump
 }
@@ -80,9 +76,10 @@ SplitterConfig {
 
 **Accounts Created**:
 - `splitter_config` PDA (owner: program)
-- `treasury` ATA (owner: splitter_config PDA)
 - `participant_balance_0` through `participant_balance_4` PDAs
 - `bot_balance` PDA
+
+**Treasury Created Later**: Client creates treasury ATA separately
 
 ### 1.2 Configure Participants (Optional)
 
@@ -110,81 +107,88 @@ participants: [
 
 ---
 
-## 💰 Phase 2: Deposit Phase
+## 🏦 Phase 2: Treasury Management (Client-Side)
 
-### 2.1 User Deposits Tokens
+### 2.1 Create Treasury Account
 
-**Trigger**: Any user calls `deposit_tokens`
-
-**What Happens**:
-1. **Validate Accounts**: Ensure all accounts are correct
-2. **Transfer Tokens**: Move tokens from user to treasury using `transfer_checked`
-3. **Update State**: Increment `total_collected` in splitter config
-4. **Verify Balance**: Confirm treasury balance increased
-
-**Flow Diagram**:
-```
-User Token Account → transfer_checked → Treasury ATA
-                                    ↓
-                            Update total_collected
-```
-
-**Example Deposit**:
-```rust
-// User deposits 1,000,000 tokens (1 token with 6 decimals)
-deposit_tokens(1000000)
-
-// Result:
-// - User balance: -1,000,000
-// - Treasury balance: +1,000,000
-// - total_collected: +1,000,000
-```
-
-### 2.2 Multiple Deposits
+**Trigger**: Client calls `getOrCreateAssociatedTokenAccount`
 
 **What Happens**:
-1. **Cumulative Tracking**: `total_collected` accumulates across multiple deposits
-2. **No Distribution**: Funds remain in treasury until bot triggers distribution
-3. **Flexible Timing**: Deposits can happen over time before distribution
+1. **Create ATA**: Generate Associated Token Account for the treasury
+2. **Set Authority**: Treasury is owned by splitter_config PDA
+3. **Initialize Empty**: Treasury starts with 0 balance
 
-**Example Timeline**:
+**Client-Side Code**:
+```typescript
+const treasury = await getOrCreateAssociatedTokenAccount(
+    connection,
+    payer,
+    mintAddress,
+    splitterConfigPda,
+    true // Allow PDA owner
+);
 ```
-Day 1: Deposit 500,000 → total_collected: 500,000
-Day 3: Deposit 300,000 → total_collected: 800,000
-Day 7: Deposit 200,000 → total_collected: 1,000,000
-Day 10: Bot triggers distribution
+
+### 2.2 Fund Treasury
+
+**Trigger**: Client calls `transfer` function
+
+**What Happens**:
+1. **Transfer Tokens**: Move tokens from user to treasury using SPL transfer
+2. **No State Update**: Splitter config remains unchanged
+3. **Ready for Distribution**: Treasury holds funds until bot distributes
+
+**Client-Side Code**:
+```typescript
+await transfer(
+    connection,
+    payer,
+    userTokenAccount,
+    treasury.address,
+    authority,
+    1000000 // Amount to fund
+);
+```
+
+**Example Funding**:
+```
+Before: Treasury balance = 0
+After: Treasury balance = 1,000,000 tokens
+Splitter config: unchanged
 ```
 
 ---
 
-## 🎯 Phase 3: Distribution Phase
+## 🎯 Phase 3: Distribution Phase (Bot-Only)
 
 ### 3.1 Bot Triggers Distribution
 
-**Trigger**: Configured bot wallet calls `claim_and_distribute`
+**Trigger**: ONLY configured bot wallet calls `claim_and_distribute`
 
 **Prerequisites**:
-- `total_collected > 0`
+- Treasury balance > 0
 - Caller must be the configured `bot_wallet`
 - All participant balance accounts must exist
+- Bot must sign the transaction
 
 ### 3.2 Calculate Distribution
 
 **What Happens**:
-1. **Calculate Bot Incentive**: 2% of total collected
-2. **Calculate Participant Pool**: 98% of total collected
-3. **Distribute to Participants**: Based on their configured share percentages
+1. **Read Treasury Balance**: Get current treasury token amount
+2. **Calculate Bot Incentive**: 2% of treasury balance
+3. **Calculate Participant Pool**: 98% of treasury balance
+4. **Update Balance Records**: Store participant allocations in PDAs
 
 **Mathematical Flow**:
 ```rust
-let total = splitter_config.total_collected;
-let bot_amount = total * 200 / 10000;        // 2%
-let participant_pool = total - bot_amount;   // 98%
+let treasury_balance = treasury.amount;
+let bot_amount = treasury_balance * 200 / 10000;        // 2%
+let participant_pool = treasury_balance - bot_amount;   // 98%
 
-// Distribute to each participant
+// Update participant balance records
 for participant in participants {
     let participant_amount = participant_pool * participant.shareBps / 10000;
-    participant_balance.amount = participant_amount;
+    participant_balance.amount += participant_amount; // Cumulative
 }
 ```
 
@@ -202,18 +206,21 @@ for participant in participants {
 // Participant 5 (10%): 98,000 tokens
 ```
 
-### 3.3 Execute Transfers
+### 3.3 Execute Distribution
 
 **What Happens**:
-1. **Transfer Bot Incentive**: Move 2% to bot's token account
+1. **Transfer Bot Incentive**: Move 2% immediately to bot's token account
 2. **Update Participant Balances**: Store allocated amounts in PDAs
-3. **Reset Total Collected**: Set `total_collected = 0`
-4. **Update Bot Balance PDA**: Store bot's earned amount
+3. **Reset Total Collected**: Set `total_collected = 0` 
+4. **Update Bot Balance PDA**: Track bot's earned amount
+5. **Treasury Retains Funds**: 98% stays in treasury for withdrawals
 
 **Transfer Flow**:
 ```
-Treasury → Bot Token Account (2%)
-Treasury → Participant Balance PDAs (98% distributed)
+Treasury (2%) → Bot Token Account (immediate)
+Treasury (98%) → Stays in Treasury (for withdrawals)
+                ↓
+        Participant Balance PDAs (records updated)
 ```
 
 **State After Distribution**:
@@ -224,6 +231,9 @@ total_collected: 0  // Reset
 // Bot Balance PDA
 amount: 20000       // Bot's earned incentive
 
+// Bot Token Account
+balance: +20000     // Bot received tokens immediately
+
 // Participant Balance PDAs
 participant_0: 294000  // 30% of 980,000
 participant_1: 245000  // 25% of 980,000
@@ -232,7 +242,7 @@ participant_3: 147000  // 15% of 980,000
 participant_4: 98000   // 10% of 980,000
 
 // Treasury
-balance: 0  // All funds distributed
+balance: 980000  // Participant funds ready for withdrawal
 ```
 
 ---
@@ -249,16 +259,16 @@ balance: 0  // All funds distributed
 - Participant must provide correct balance PDA
 
 **What Happens**:
-1. **Validate Withdrawal**: Ensure participant has allocated funds
+1. **Validate Withdrawal**: Ensure participant has allocated funds > 0
 2. **Transfer Tokens**: Move tokens from treasury to participant's token account
-3. **Reset Balance**: Set participant balance PDA to 0
+3. **Reset Balance**: Set participant balance PDA to 0  
 4. **Update Treasury**: Decrease treasury balance
 
 **Withdrawal Flow**:
 ```
-Participant Balance PDA → Treasury → Participant Token Account
-        ↓
-    Reset to 0
+Participant Balance PDA (check amount) → Treasury → Participant Token Account
+                    ↓
+              Reset PDA to 0
 ```
 
 **Example Withdrawal**:
@@ -309,41 +319,40 @@ Bot Wallet: Project manager
 3. Sets initial 20% shares for each member
 ```
 
-**Phase 2: Revenue Collection**
+**Phase 2: Treasury Management**
 ```
-Week 1: Deposit 1000 USDC
-Week 2: Deposit 500 USDC
-Week 3: Deposit 1500 USDC
-Total Collected: 3000 USDC
+Week 1: Client creates treasury ATA
+Week 2: Client transfers 3000 USDC to treasury
+Treasury Balance: 3000 USDC ready for distribution
 ```
 
 **Phase 3: Distribution**
 ```
 Bot triggers distribution:
-- Bot receives: 60 USDC (2%)
-- Team pool: 2940 USDC (98%)
+- Bot receives: 60 USDC (2%) immediately
+- Team records: 2940 USDC (98%) allocated
 
-Distribution:
-- Member 1: 588 USDC (20%)
-- Member 2: 588 USDC (20%)
+Allocation Records:
+- Member 1: 882 USDC (30%)
+- Member 2: 735 USDC (25%)
 - Member 3: 588 USDC (20%)
-- Member 4: 588 USDC (20%)
-- Member 5: 588 USDC (20%)
+- Member 4: 441 USDC (15%)
+- Member 5: 294 USDC (10%)
 ```
 
 **Phase 4: Withdrawals**
 ```
-Day 1: Member 1 withdraws 588 USDC
+Day 1: Member 1 withdraws 882 USDC
 Day 2: Member 3 withdraws 588 USDC
-Day 3: Member 5 withdraws 588 USDC
-Day 4: Member 2 withdraws 588 USDC
-Day 5: Member 4 withdraws 588 USDC
+Day 3: Member 5 withdraws 294 USDC
+Day 4: Member 2 withdraws 735 USDC
+Day 5: Member 4 withdraws 441 USDC
 ```
 
 **Final State**:
 ```
-- All participants received their shares
-- Bot earned 60 USDC incentive
+- All participants received their allocated shares
+- Bot earned 60 USDC incentive immediately
 - Treasury empty (ready for next cycle)
 - All balance PDAs reset to 0
 ```
@@ -355,9 +364,9 @@ Day 5: Member 4 withdraws 588 USDC
 ### Access Control
 ```
 Initialize: Authority only
-Update: Authority only
-Deposit: Anyone (with valid accounts)
-Distribute: Bot wallet only
+Update: Authority only  
+Treasury Management: Client-side (anyone)
+Distribute: Bot wallet only (with bot signature)
 Withdraw: Participant + Authority signatures
 ```
 
@@ -386,29 +395,29 @@ Withdraw: Participant + Authority signatures
 
 **Initialize**:
 ```
-Input: Authority + Participants + Bot + Mint
+Input: Authority + Participants + Bot wallet
 Processing: Create PDAs + Set initial state
 Output: Complete splitter configuration
 ```
 
-**Deposit**:
+**Treasury Management**:
 ```
-Input: Amount + User accounts
-Processing: Transfer + Update total_collected
-Output: Treasury balance + Config update
+Input: Client + Mint + Amount
+Processing: Create ATA + Transfer tokens
+Output: Funded treasury ready for distribution
 ```
 
 **Distribute**:
 ```
-Input: Bot wallet + All accounts
-Processing: Calculate + Transfer + Update
-Output: Distributed funds + Reset state
+Input: Bot wallet signature + All accounts
+Processing: Calculate + Transfer bot share + Update records
+Output: Bot gets 2%, participants get balance records
 ```
 
 **Withdraw**:
 ```
 Input: Participant + Authority signatures
-Processing: Transfer + Reset balance
+Processing: Transfer from treasury + Reset balance
 Output: Participant tokens + Balance reset
 ```
 

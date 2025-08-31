@@ -1,29 +1,23 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     token_interface::{Mint, TokenAccount, TokenInterface, TransferChecked, transfer_checked},
-    associated_token::AssociatedToken,
 };
 use crate::states::*;
 use crate::errors::*;
 
 #[derive(Accounts)]
 pub struct ClaimAndDistribute<'info> {
-    pub authority: Signer<'info>,
+    #[account(mut)]
+    pub bot: Signer<'info>,
     #[account(
         mut,
         seeds = [b"splitter_config", splitter_config.authority.as_ref(), splitter_config.name.as_ref()],
         bump,
-        has_one = authority
+        constraint = splitter_config.bot_wallet == bot.key()
     )]
     pub splitter_config: Box<Account<'info, SplitterConfig>>,
 
-    #[account(
-        init,
-        payer = bot_wallet, // Added missing payer
-        associated_token::mint = treasury_mint,
-        associated_token::authority = splitter_config,
-        associated_token::token_program = token_program,
-    )]
+    #[account(mut)]
     pub treasury: InterfaceAccount<'info, TokenAccount>,
 
     pub treasury_mint: InterfaceAccount<'info, Mint>,
@@ -82,26 +76,17 @@ pub struct ClaimAndDistribute<'info> {
     )]
     pub bot_balance: Box<Account<'info, ParticipantBalance>>,
 
-    #[account(
-        mut,
-        constraint = bot_wallet.key() == splitter_config.bot_wallet
-    )]
-    pub bot_wallet: Signer<'info>,
-
     pub token_program: Interface<'info, TokenInterface>,
-    
-    pub system_program: Program<'info, System>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
 impl<'info> ClaimAndDistribute<'info> {
     pub fn claim_and_distribute(&mut self) -> Result<()> {
-        // Read the actual treasury balance since deposits are now done via direct transfers
-        let actual_treasury_balance = self.treasury.amount;
-        require!(actual_treasury_balance > 0, SplitsError::NoFundsToDistribute);
-        
+        // Read the current treasury balance (client should have already transferred tokens here)
+        let treasury_balance = self.treasury.amount;
+        require!(treasury_balance > 0, SplitsError::NoFundsToDistribute);
+
         // Update total_collected to match the actual treasury balance
-        self.splitter_config.total_collected = actual_treasury_balance;
+        self.splitter_config.total_collected = treasury_balance;
         
         let total_amount = self.splitter_config.total_collected;
         require!(total_amount > 0, SplitsError::NoFundsToDistribute);
@@ -117,27 +102,32 @@ impl<'info> ClaimAndDistribute<'info> {
         let participant_amount = total_amount.checked_sub(bot_amount)
             .ok_or(SplitsError::ArithmeticOverflow)?;
 
+        // Derive the correct bump for the splitter_config PDA using all 3 seeds
+        let (_pda, bump) = Pubkey::find_program_address(
+            &[
+                b"splitter_config", 
+                self.splitter_config.authority.as_ref(), 
+                self.splitter_config.name.as_ref()
+            ],
+            &crate::ID,
+        );
+        
+        let signer_seeds = &[
+            b"splitter_config",
+            self.splitter_config.authority.as_ref(),
+            self.splitter_config.name.as_ref(),
+            &[bump],
+        ];
+        let signer = &[&signer_seeds[..]];
+
         // Transfer bot's share
         if bot_amount > 0 {
-            // Derive the correct bump for the splitter_config PDA
-            let (_pda, bump) = Pubkey::find_program_address(
-                &[b"splitter_config", self.splitter_config.authority.as_ref()],
-                &crate::ID,
-            );
-            
-            let signer_seeds = &[
-                b"splitter_config",
-                self.splitter_config.authority.as_ref(),
-                &[bump],
-            ];
-            let signer = &[&signer_seeds[..]];
-
             let transfer_ctx = CpiContext::new_with_signer(
                 self.token_program.to_account_info(),
                 TransferChecked {
                     from: self.treasury.to_account_info(),
                     mint: self.treasury_mint.to_account_info(),
-                    to: self.bot_token_account.to_account_info(),
+                    to: self.bot_token_account.to_account_info(), // Bot gets tokens to bot account
                     authority: self.splitter_config.to_account_info(),
                 },
                 signer,
