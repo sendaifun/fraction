@@ -408,7 +408,6 @@ describe("Splits Program", () => {
         const withdrawTx = await program.methods
           .withdrawShare()
           .accountsPartial({
-            authority: authority.publicKey,
             participant: participants[i].publicKey,
             splitterConfig: sharedSplitterConfigPda,
             participantBalance: sharedParticipantBalances[i],

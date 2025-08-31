@@ -1,16 +1,15 @@
 use anchor_lang::prelude::*;
 use crate::states::participant::Participant;
 
-
 #[account]
 pub struct SplitterConfig {
     pub authority: Pubkey,
     pub name: String,
     pub participants: [Participant; 5],
-    pub bot_wallet: Pubkey, //32
-    pub incentive_bps: u8, //1
-    pub total_collected: u64, //8
-    pub bump: u8,//1
+    pub bot_wallet: Pubkey,
+    pub incentive_bps: u8,
+    pub total_collected: u64,
+    pub bump: u8,
 }
 
 impl SplitterConfig {

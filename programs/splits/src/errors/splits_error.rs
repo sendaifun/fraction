@@ -24,4 +24,6 @@ pub enum SplitsError {
     DuplicateParticipantWallet,
     #[msg("Bot wallet cannot be the same as any participant wallet")]
     BotWalletConflict,
+    #[msg("Only the authorized bot can call this instruction")]
+    UnauthorizedBot,
 }

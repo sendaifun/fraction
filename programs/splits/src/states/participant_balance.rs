@@ -9,5 +9,5 @@ pub struct ParticipantBalance {
 }
 
 impl ParticipantBalance {
-    pub const LEN: usize = 8 + 32 + 32 + 8 + 1; // 1 (discriminator) + splitter + participant + amount + bump
+    pub const LEN: usize = 8 + 32 + 32 + 8 + 1; // discriminator + splitter + participant + amount + bump
 }

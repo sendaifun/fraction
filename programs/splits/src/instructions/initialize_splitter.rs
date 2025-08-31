@@ -151,10 +151,10 @@ impl<'info> InitializeSplitter<'info> {
             SplitsError::BotWalletConflict
         );
 
-        // Set the splitter config using set_inner
+        // Initialize the splitter config using set_inner
         self.splitter_config.set_inner(SplitterConfig {
             authority: self.authority.key(),
-            name: name,//avoided expensive operation
+            name: name,
             participants,
             bot_wallet,
             incentive_bps: 200u8,
@@ -162,27 +162,44 @@ impl<'info> InitializeSplitter<'info> {
             bump: self.splitter_config.bump,
         });
 
-        // Initialize ParticipantBalance accounts using set_inner
+        // Initialize ParticipantBalance accounts using set_inner (regular accounts)
         // Initialization is Done in an Order
         for i in 0..5 {
-            let participant_balance = match i {
-                0 => &mut self.participant_balance_0,
-                1 => &mut self.participant_balance_1,
-                2 => &mut self.participant_balance_2,
-                3 => &mut self.participant_balance_3,
-                4 => &mut self.participant_balance_4,
-                _ => unreachable!(),
-            };
-            
-            participant_balance.set_inner(ParticipantBalance {
+            let participant_balance_data = ParticipantBalance {
                 splitter: self.splitter_config.key(),
                 participant: participants[i].wallet,
                 amount: 0,
-                bump: participant_balance.bump,
-            });
+                bump: match i {
+                    0 => self.participant_balance_0.bump,
+                    1 => self.participant_balance_1.bump,
+                    2 => self.participant_balance_2.bump,
+                    3 => self.participant_balance_3.bump,
+                    4 => self.participant_balance_4.bump,
+                    _ => unreachable!(),
+                },
+            };
+            
+            match i {
+                0 => {
+                    self.participant_balance_0.set_inner(participant_balance_data);
+                },
+                1 => {
+                    self.participant_balance_1.set_inner(participant_balance_data);
+                },
+                2 => {
+                    self.participant_balance_2.set_inner(participant_balance_data);
+                },
+                3 => {
+                    self.participant_balance_3.set_inner(participant_balance_data);
+                },
+                4 => {
+                    self.participant_balance_4.set_inner(participant_balance_data);
+                },
+                _ => unreachable!(),
+            };
         }
 
-        // Set the bot balance using set_inner
+        // Initialize the bot balance using set_inner
         self.bot_balance.set_inner(ParticipantBalance {
             splitter: self.splitter_config.key(),
             participant: bot_wallet,

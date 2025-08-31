@@ -7,13 +7,11 @@ use crate::errors::*;
 
 #[derive(Accounts)]
 pub struct WithdrawShare<'info> {
-    pub authority: Signer<'info>,
     pub participant: Signer<'info>,
     
     #[account(
-        seeds = [b"splitter_config", splitter_config.authority.as_ref(),splitter_config.name.as_ref()],
-        bump,
-        has_one = authority
+        seeds = [b"splitter_config", splitter_config.authority.as_ref(), splitter_config.name.as_ref()],
+        bump
     )]
     pub splitter_config: Account<'info, SplitterConfig>,
 

@@ -150,7 +150,8 @@ impl<'info> ClaimAndDistribute<'info> {
         ];
 
         for (i, participant_balance) in participant_balances.iter_mut().enumerate() {
-            let share_bps = self.splitter_config.participants[i].share_bps as u64;
+            let config = &self.splitter_config;
+            let share_bps = config.participants[i].share_bps as u64;
             if share_bps > 0 {
                 let participant_share = participant_amount
                     .checked_mul(share_bps)

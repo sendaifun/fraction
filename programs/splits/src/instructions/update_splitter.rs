@@ -25,9 +25,8 @@ impl<'info> UpdateSplitter<'info> {
         let total_shares: u32 = participants.iter().map(|p| p.share_bps as u32).sum();
         require!(total_shares == 10_000, SplitsError::InvalidShareDistribution);
 
-        let splitter_config = &mut self.splitter_config;
-        splitter_config.participants = participants;
-        splitter_config.bot_wallet = bot_wallet;
+        self.splitter_config.participants = participants;
+        self.splitter_config.bot_wallet = bot_wallet;
         Ok(())
     }
 }
