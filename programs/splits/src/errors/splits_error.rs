@@ -26,4 +26,10 @@ pub enum SplitsError {
     BotWalletConflict,
     #[msg("Only the authorized bot can call this instruction")]
     UnauthorizedBot,
+    #[msg("Invalid authority provided")]
+    InvalidAuthority,
+    #[msg("Provided name does not match splitter config name")]
+    NameMismatch,
+    #[msg("Invalid bot wallet")]
+    InvalidBot,
 }

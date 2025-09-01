@@ -27,34 +27,32 @@ pub mod splits {
         participant_wallet_4: Pubkey,
     ) -> Result<()> {
         ctx.accounts.initialize_splitter(
-            name, 
-            participants, 
+            name,
+            participants,
             bot_wallet,
             participant_wallet_0,
             participant_wallet_1,
             participant_wallet_2,
             participant_wallet_3,
             participant_wallet_4,
+            &ctx.bumps,
         )
     }
 
     pub fn update_splitter(
         ctx: Context<UpdateSplitter>,
+        _name: String,
         participants: [Participant; 5],
         bot_wallet: Pubkey,
     ) -> Result<()> {
         ctx.accounts.update_splitter(participants, bot_wallet)
     }
 
-    pub fn claim_and_distribute(
-        ctx: Context<ClaimAndDistribute>,
-    ) -> Result<()> {
+    pub fn claim_and_distribute(ctx: Context<ClaimAndDistribute>, _name: String) -> Result<()> {
         ctx.accounts.claim_and_distribute()
     }
 
-    pub fn withdraw_share(
-        ctx: Context<WithdrawShare>,
-    ) -> Result<()> {
+    pub fn withdraw_share(ctx: Context<WithdrawShare>, _name: String) -> Result<()> {
         ctx.accounts.withdraw_share()
     }
 }
