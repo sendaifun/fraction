@@ -6,7 +6,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-splits = "BWjBnoh7LE3Cogedykt8QJL6rMV817DNr2M8X1YLXhwH"
+splits = "FM9hKTFN98M2uo7zw2huAbx7vJTQpfgFuxr9rVCTt8UY"
 
 [programs.devnet]
 splits = "AXTUsPAQnRh2n1ZJDzNsbZgQDFhavFivMRtLHiMftVaB"

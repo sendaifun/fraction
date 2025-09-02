@@ -9,7 +9,7 @@ pub use states::*;
 pub mod errors;
 pub use errors::*;
 
-declare_id!("BWjBnoh7LE3Cogedykt8QJL6rMV817DNr2M8X1YLXhwH");
+declare_id!("FM9hKTFN98M2uo7zw2huAbx7vJTQpfgFuxr9rVCTt8UY");
 
 #[program]
 pub mod splits {

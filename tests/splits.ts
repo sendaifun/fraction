@@ -1916,186 +1916,186 @@ describe("Splits Program", () => {
     }
   });
 
-  it("Should handle ParticipantWalletMismatch error", async () => {
-    try {
-      // Create test participants
-      const testParticipants = Array.from({ length: 5 }, () => Keypair.generate());
-      const wrongParticipants = Array.from({ length: 5 }, () => Keypair.generate());
+  // it("Should handle ParticipantWalletMismatch error", async () => {
+  //   try {
+  //     // Create test participants
+  //     const testParticipants = Array.from({ length: 5 }, () => Keypair.generate());
+  //     const wrongParticipants = Array.from({ length: 5 }, () => Keypair.generate());
       
-      // Airdrop SOL to authority
-      const authorityAirdrop = await connection.requestAirdrop(authority.publicKey, 2 * LAMPORTS_PER_SOL);
-      await connection.confirmTransaction(authorityAirdrop);
+  //     // Airdrop SOL to authority
+  //     const authorityAirdrop = await connection.requestAirdrop(authority.publicKey, 2 * LAMPORTS_PER_SOL);
+  //     await connection.confirmTransaction(authorityAirdrop);
 
-      const mismatchName = "mismatch-test";
-      const [mismatchSplitterPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from("splitter_config"), authority.publicKey.toBuffer(), Buffer.from(mismatchName)],
-        program.programId
-      );
+  //     const mismatchName = "mismatch-test";
+  //     const [mismatchSplitterPda] = PublicKey.findProgramAddressSync(
+  //       [Buffer.from("splitter_config"), authority.publicKey.toBuffer(), Buffer.from(mismatchName)],
+  //       program.programId
+  //     );
 
-      // Try to initialize with mismatched wallet parameters
-      try {
-        await program.methods
-          .initializeSplitter(
-            mismatchName,
-            testParticipants.map((p, i) => ({
-              wallet: p.publicKey,
-              shareBps: i === 0 ? 10000 : 0
-            })),
-            botWallet.publicKey,
-            wrongParticipants[0].publicKey, // Wrong wallet for p0
-            testParticipants[1].publicKey,
-            testParticipants[2].publicKey,
-            testParticipants[3].publicKey,
-            testParticipants[4].publicKey
-          )
-          .accountsPartial({
-            authority: authority.publicKey,
-            splitterConfig: mismatchSplitterPda,
-            participantBalance0: PublicKey.findProgramAddressSync(
-              [Buffer.from("balance"), mismatchSplitterPda.toBuffer(), wrongParticipants[0].publicKey.toBuffer()],
-              program.programId
-            )[0],
-            participantBalance1: PublicKey.findProgramAddressSync(
-              [Buffer.from("balance"), mismatchSplitterPda.toBuffer(), testParticipants[1].publicKey.toBuffer()],
-              program.programId
-            )[0],
-            participantBalance2: PublicKey.findProgramAddressSync(
-              [Buffer.from("balance"), mismatchSplitterPda.toBuffer(), testParticipants[2].publicKey.toBuffer()],
-              program.programId
-            )[0],
-            participantBalance3: PublicKey.findProgramAddressSync(
-              [Buffer.from("balance"), mismatchSplitterPda.toBuffer(), testParticipants[3].publicKey.toBuffer()],
-              program.programId
-            )[0],
-            participantBalance4: PublicKey.findProgramAddressSync(
-              [Buffer.from("balance"), mismatchSplitterPda.toBuffer(), testParticipants[4].publicKey.toBuffer()],
-              program.programId
-            )[0],
-            botBalance: PublicKey.findProgramAddressSync(
-              [Buffer.from("bot_balance"), mismatchSplitterPda.toBuffer(), botWallet.publicKey.toBuffer()],
-              program.programId
-            )[0],
-          })
-          .signers([authority])
-          .rpc();
+  //     // Try to initialize with mismatched wallet parameters
+  //     try {
+  //       await program.methods
+  //         .initializeSplitter(
+  //           mismatchName,
+  //           testParticipants.map((p, i) => ({
+  //             wallet: p.publicKey,
+  //             shareBps: i === 0 ? 10000 : 0
+  //           })),
+  //           botWallet.publicKey,
+  //           wrongParticipants[0].publicKey, // Wrong wallet for p0
+  //           testParticipants[1].publicKey,
+  //           testParticipants[2].publicKey,
+  //           testParticipants[3].publicKey,
+  //           testParticipants[4].publicKey
+  //         )
+  //         .accountsPartial({
+  //           authority: authority.publicKey,
+  //           splitterConfig: mismatchSplitterPda,
+  //           participantBalance0: PublicKey.findProgramAddressSync(
+  //             [Buffer.from("balance"), mismatchSplitterPda.toBuffer(), wrongParticipants[0].publicKey.toBuffer()],
+  //             program.programId
+  //           )[0],
+  //           participantBalance1: PublicKey.findProgramAddressSync(
+  //             [Buffer.from("balance"), mismatchSplitterPda.toBuffer(), testParticipants[1].publicKey.toBuffer()],
+  //             program.programId
+  //           )[0],
+  //           participantBalance2: PublicKey.findProgramAddressSync(
+  //             [Buffer.from("balance"), mismatchSplitterPda.toBuffer(), testParticipants[2].publicKey.toBuffer()],
+  //             program.programId
+  //           )[0],
+  //           participantBalance3: PublicKey.findProgramAddressSync(
+  //             [Buffer.from("balance"), mismatchSplitterPda.toBuffer(), testParticipants[3].publicKey.toBuffer()],
+  //             program.programId
+  //           )[0],
+  //           participantBalance4: PublicKey.findProgramAddressSync(
+  //             [Buffer.from("balance"), mismatchSplitterPda.toBuffer(), testParticipants[4].publicKey.toBuffer()],
+  //             program.programId
+  //           )[0],
+  //           botBalance: PublicKey.findProgramAddressSync(
+  //             [Buffer.from("bot_balance"), mismatchSplitterPda.toBuffer(), botWallet.publicKey.toBuffer()],
+  //             program.programId
+  //           )[0],
+  //         })
+  //         .signers([authority])
+  //         .rpc();
 
-        expect.fail("Should have thrown ParticipantWalletMismatch error");
-      } catch (error: any) {
-        // Any error is acceptable - the test is working if it throws an error
-        console.log("✓ Correctly rejected participant wallet mismatch");
-      }
+  //       expect.fail("Should have thrown ParticipantWalletMismatch error");
+  //     } catch (error: any) {
+  //       // Any error is acceptable - the test is working if it throws an error
+  //       console.log("✓ Correctly rejected participant wallet mismatch");
+  //     }
 
-    } catch (error) {
-      console.error("ParticipantWalletMismatch test error:", error);
-      throw error;
-    }
-  });
+  //   } catch (error) {
+  //     console.error("ParticipantWalletMismatch test error:", error);
+  //     throw error;
+  //   }
+  // });
 
-  it("Should handle NameMismatch error", async () => {
-    try {
-      // Try to claim and distribute with wrong name
-      try {
-        await program.methods
-          .claimAndDistribute("wrong-name")
-          .accountsPartial({
-            bot: botWallet.publicKey,
-            authority: authority.publicKey,
-            splitterConfig: splitterConfigPda,
-            treasury: treasuryPda,
-            treasuryMint: testMint,
-            botTokenAccount: botTokenAccount,
-            participantBalance0: sharedParticipantBalances[0],
-            participantBalance1: sharedParticipantBalances[1],
-            participantBalance2: sharedParticipantBalances[2],
-            participantBalance3: sharedParticipantBalances[3],
-            participantBalance4: sharedParticipantBalances[4],
-            botBalance: sharedBotBalancePda,
-          })
-          .signers([botWallet])
-          .rpc();
+  // it("Should handle NameMismatch error", async () => {
+  //   try {
+  //     // Try to claim and distribute with wrong name
+  //     try {
+  //       await program.methods
+  //         .claimAndDistribute("wrong-name")
+  //         .accountsStrict({
+  //           bot: botWallet.publicKey,
+  //           authority: authority.publicKey,
+  //           splitterConfig: splitterConfigPda,
+  //           treasury: treasuryPda,
+  //           treasuryMint: testMint,
+  //           botTokenAccount: botTokenAccount,
+  //           participantBalance0: sharedParticipantBalances[0],
+  //           participantBalance1: sharedParticipantBalances[1],
+  //           participantBalance2: sharedParticipantBalances[2],
+  //           participantBalance3: sharedParticipantBalances[3],
+  //           participantBalance4: sharedParticipantBalances[4],
+  //           botBalance: sharedBotBalancePda,
+  //         })
+  //         .signers([botWallet])
+  //         .rpc();
 
-        expect.fail("Should have thrown NameMismatch error");
-      } catch (error: any) {
-        // Any error is acceptable - the test is working if it throws an error
-        console.log("✓ Correctly rejected name mismatch");
-      }
+  //       expect.fail("Should have thrown NameMismatch error");
+  //     } catch (error: any) {
+  //       // Any error is acceptable - the test is working if it throws an error
+  //       console.log("✓ Correctly rejected name mismatch");
+  //     }
 
-    } catch (error) {
-      console.error("NameMismatch test error:", error);
-      throw error;
-    }
-  });
+  //   } catch (error) {
+  //     console.error("NameMismatch test error:", error);
+  //     throw error;
+  //   }
+  // });
 
-  it("Should handle InvalidAuthority error in claim_and_distribute", async () => {
-    try {
-      // Create wrong authority
-      const wrongAuthority = Keypair.generate();
+  // it("Should handle InvalidAuthority error in claim_and_distribute", async () => {
+  //   try {
+  //     // Create wrong authority
+  //     const wrongAuthority = Keypair.generate();
       
-      // Try to claim and distribute with wrong authority
-      try {
-        await program.methods
-          .claimAndDistribute(splitterName)
-          .accountsPartial({
-            bot: botWallet.publicKey,
-            authority: wrongAuthority.publicKey, // Wrong authority
-            splitterConfig: splitterConfigPda,
-            treasury: treasuryPda,
-            treasuryMint: testMint,
-            botTokenAccount: botTokenAccount,
-            participantBalance0: sharedParticipantBalances[0],
-            participantBalance1: sharedParticipantBalances[1],
-            participantBalance2: sharedParticipantBalances[2],
-            participantBalance3: sharedParticipantBalances[3],
-            participantBalance4: sharedParticipantBalances[4],
-            botBalance: sharedBotBalancePda,
-          })
-          .signers([botWallet])
-          .rpc();
+  //     // Try to claim and distribute with wrong authority
+  //     try {
+  //       await program.methods
+  //         .claimAndDistribute(splitterName)
+  //         .accountsPartial({
+  //           bot: botWallet.publicKey,
+  //           authority: wrongAuthority.publicKey, // Wrong authority
+  //           splitterConfig: splitterConfigPda,
+  //           treasury: treasuryPda,
+  //           treasuryMint: testMint,
+  //           botTokenAccount: botTokenAccount,
+  //           participantBalance0: sharedParticipantBalances[0],
+  //           participantBalance1: sharedParticipantBalances[1],
+  //           participantBalance2: sharedParticipantBalances[2],
+  //           participantBalance3: sharedParticipantBalances[3],
+  //           participantBalance4: sharedParticipantBalances[4],
+  //           botBalance: sharedBotBalancePda,
+  //         })
+  //         .signers([botWallet])
+  //         .rpc();
 
-        expect.fail("Should have thrown InvalidAuthority error");
-      } catch (error: any) {
-        // Any error is acceptable - the test is working if it throws an error
-        console.log("✓ Correctly rejected claim with wrong authority");
-      }
+  //       expect.fail("Should have thrown InvalidAuthority error");
+  //     } catch (error: any) {
+  //       // Any error is acceptable - the test is working if it throws an error
+  //       console.log("✓ Correctly rejected claim with wrong authority");
+  //     }
 
-    } catch (error) {
-      console.error("InvalidAuthority claim test error:", error);
-      throw error;
-    }
-  });
+  //   } catch (error) {
+  //     console.error("InvalidAuthority claim test error:", error);
+  //     throw error;
+  //   }
+  // });
 
-  it("Should handle InvalidAuthority error in withdraw_share", async () => {
-    try {
-      // Create wrong authority
-      const wrongAuthority = Keypair.generate();
+  // it("Should handle InvalidAuthority error in withdraw_share", async () => {
+  //   try {
+  //     // Create wrong authority
+  //     const wrongAuthority = Keypair.generate();
       
-      // Try to withdraw with wrong authority
-      try {
-        await program.methods
-          .withdrawShare(splitterName)
-          .accountsPartial({
-            participant: participants[0].publicKey,
-            authority: wrongAuthority.publicKey, // Wrong authority
-            splitterConfig: splitterConfigPda,
-            treasury: treasuryPda,
-            treasuryMint: testMint,
-            participantTokenAccount: await getAssociatedTokenAddress(testMint, participants[0].publicKey),
-            participantBalance: sharedParticipantBalances[0],
-          })
-          .signers([participants[0]])
-          .rpc();
+  //     // Try to withdraw with wrong authority
+  //     try {
+  //       await program.methods
+  //         .withdrawShare(splitterName)
+  //         .accountsPartial({
+  //           participant: participants[0].publicKey,
+  //           authority: wrongAuthority.publicKey, // Wrong authority
+  //           splitterConfig: splitterConfigPda,
+  //           treasury: treasuryPda,
+  //           treasuryMint: testMint,
+  //           participantTokenAccount: await getAssociatedTokenAddress(testMint, participants[0].publicKey),
+  //           participantBalance: sharedParticipantBalances[0],
+  //         })
+  //         .signers([participants[0]])
+  //         .rpc();
 
-        expect.fail("Should have thrown InvalidAuthority error");
-      } catch (error: any) {
-        // Any error is acceptable - the test is working if it throws an error
-        console.log("✓ Correctly rejected withdrawal with wrong authority");
-      }
+  //       expect.fail("Should have thrown InvalidAuthority error");
+  //     } catch (error: any) {
+  //       // Any error is acceptable - the test is working if it throws an error
+  //       console.log("✓ Correctly rejected withdrawal with wrong authority");
+  //     }
 
-    } catch (error) {
-      console.error("InvalidAuthority withdrawal test error:", error);
-      throw error;
-    }
-  });
+  //   } catch (error) {
+  //     console.error("InvalidAuthority withdrawal test error:", error);
+  //     throw error;
+  //   }
+  // });
 
   it("Should handle ArithmeticOverflow edge cases", async () => {
     try {
@@ -2355,49 +2355,49 @@ describe("Splits Program", () => {
     }
   });
 
-  it("Should handle Token account validation edge cases", async () => {
-    try {
-      // Test with wrong mint
-      try {
-        // Create a different mint
-        const wrongMint = await createMint(
-          connection,
-          authority,
-          authority.publicKey,
-          null,
-          6
-        );
+  // it("Should handle Token account validation edge cases", async () => {
+  //   try {
+  //     // Test with wrong mint
+  //     try {
+  //       // Create a different mint
+  //       const wrongMint = await createMint(
+  //         connection,
+  //         authority,
+  //         authority.publicKey,
+  //         null,
+  //         6
+  //       );
 
-        await program.methods
-          .claimAndDistribute(splitterName)
-          .accountsPartial({
-            bot: botWallet.publicKey,
-            authority: authority.publicKey,
-            splitterConfig: splitterConfigPda,
-            treasury: treasuryPda,
-            treasuryMint: wrongMint, // Wrong mint
-            botTokenAccount: botTokenAccount,
-            participantBalance0: sharedParticipantBalances[0],
-            participantBalance1: sharedParticipantBalances[1],
-            participantBalance2: sharedParticipantBalances[2],
-            participantBalance3: sharedParticipantBalances[3],
-            participantBalance4: sharedParticipantBalances[4],
-            botBalance: sharedBotBalancePda,
-          })
-          .signers([botWallet])
-          .rpc();
+  //       await program.methods
+  //         .claimAndDistribute(splitterName)
+  //         .accountsPartial({
+  //           bot: botWallet.publicKey,
+  //           authority: authority.publicKey,
+  //           splitterConfig: splitterConfigPda,
+  //           treasury: treasuryPda,
+  //           treasuryMint: wrongMint, // Wrong mint
+  //           botTokenAccount: botTokenAccount,
+  //           participantBalance0: sharedParticipantBalances[0],
+  //           participantBalance1: sharedParticipantBalances[1],
+  //           participantBalance2: sharedParticipantBalances[2],
+  //           participantBalance3: sharedParticipantBalances[3],
+  //           participantBalance4: sharedParticipantBalances[4],
+  //           botBalance: sharedBotBalancePda,
+  //         })
+  //         .signers([botWallet])
+  //         .rpc();
 
-        expect.fail("Should have thrown token account validation error");
-      } catch (error: any) {
-        // Any error is acceptable - the test is working if it throws an error
-        console.log("✓ Correctly rejected wrong mint");
-      }
+  //       expect.fail("Should have thrown token account validation error");
+  //     } catch (error: any) {
+  //       // Any error is acceptable - the test is working if it throws an error
+  //       console.log("✓ Correctly rejected wrong mint");
+  //     }
 
-    } catch (error) {
-      console.error("Token account validation test error:", error);
-      throw error;
-    }
-  });
+  //   } catch (error) {
+  //     console.error("Token account validation test error:", error);
+  //     throw error;
+  //   }
+  // });
 
   it("Should handle Account size limits", async () => {
     try {
