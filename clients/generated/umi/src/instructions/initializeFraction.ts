@@ -40,12 +40,6 @@ import {
 export type InitializeFractionInstructionAccounts = {
   authority: Signer;
   fractionConfig?: PublicKey | Pda;
-  participantBalance0?: PublicKey | Pda;
-  participantBalance1?: PublicKey | Pda;
-  participantBalance2?: PublicKey | Pda;
-  participantBalance3?: PublicKey | Pda;
-  participantBalance4?: PublicKey | Pda;
-  botBalance?: PublicKey | Pda;
   systemProgram?: PublicKey | Pda;
 };
 
@@ -55,22 +49,12 @@ export type InitializeFractionInstructionData = {
   name: string;
   participants: Array<Participant>;
   botWallet: PublicKey;
-  participantWallet0: PublicKey;
-  participantWallet1: PublicKey;
-  participantWallet2: PublicKey;
-  participantWallet3: PublicKey;
-  participantWallet4: PublicKey;
 };
 
 export type InitializeFractionInstructionDataArgs = {
   name: string;
   participants: Array<ParticipantArgs>;
   botWallet: PublicKey;
-  participantWallet0: PublicKey;
-  participantWallet1: PublicKey;
-  participantWallet2: PublicKey;
-  participantWallet3: PublicKey;
-  participantWallet4: PublicKey;
 };
 
 export function getInitializeFractionInstructionDataSerializer(): Serializer<
@@ -88,11 +72,6 @@ export function getInitializeFractionInstructionDataSerializer(): Serializer<
         ['name', string()],
         ['participants', array(getParticipantSerializer(), { size: 5 })],
         ['botWallet', publicKeySerializer()],
-        ['participantWallet0', publicKeySerializer()],
-        ['participantWallet1', publicKeySerializer()],
-        ['participantWallet2', publicKeySerializer()],
-        ['participantWallet3', publicKeySerializer()],
-        ['participantWallet4', publicKeySerializer()],
       ],
       { description: 'InitializeFractionInstructionData' }
     ),
@@ -119,7 +98,7 @@ export function initializeFraction(
   // Program ID.
   const programId = context.programs.getPublicKey(
     'fraction',
-    'FM9hKTFN98M2uo7zw2huAbx7vJTQpfgFuxr9rVCTt8UY'
+    'Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg'
   );
 
   // Accounts.
@@ -134,38 +113,8 @@ export function initializeFraction(
       isWritable: true as boolean,
       value: input.fractionConfig ?? null,
     },
-    participantBalance0: {
-      index: 2,
-      isWritable: true as boolean,
-      value: input.participantBalance0 ?? null,
-    },
-    participantBalance1: {
-      index: 3,
-      isWritable: true as boolean,
-      value: input.participantBalance1 ?? null,
-    },
-    participantBalance2: {
-      index: 4,
-      isWritable: true as boolean,
-      value: input.participantBalance2 ?? null,
-    },
-    participantBalance3: {
-      index: 5,
-      isWritable: true as boolean,
-      value: input.participantBalance3 ?? null,
-    },
-    participantBalance4: {
-      index: 6,
-      isWritable: true as boolean,
-      value: input.participantBalance4 ?? null,
-    },
-    botBalance: {
-      index: 7,
-      isWritable: true as boolean,
-      value: input.botBalance ?? null,
-    },
     systemProgram: {
-      index: 8,
+      index: 2,
       isWritable: false as boolean,
       value: input.systemProgram ?? null,
     },
@@ -186,87 +135,6 @@ export function initializeFraction(
         expectPublicKey(resolvedAccounts.authority.value)
       ),
       string().serialize(expectSome(resolvedArgs.name)),
-    ]);
-  }
-  if (!resolvedAccounts.participantBalance0.value) {
-    resolvedAccounts.participantBalance0.value = context.eddsa.findPda(
-      programId,
-      [
-        bytes().serialize(new Uint8Array([98, 97, 108, 97, 110, 99, 101])),
-        publicKeySerializer().serialize(
-          expectPublicKey(resolvedAccounts.fractionConfig.value)
-        ),
-        publicKeySerializer().serialize(
-          expectSome(resolvedArgs.participantWallet0)
-        ),
-      ]
-    );
-  }
-  if (!resolvedAccounts.participantBalance1.value) {
-    resolvedAccounts.participantBalance1.value = context.eddsa.findPda(
-      programId,
-      [
-        bytes().serialize(new Uint8Array([98, 97, 108, 97, 110, 99, 101])),
-        publicKeySerializer().serialize(
-          expectPublicKey(resolvedAccounts.fractionConfig.value)
-        ),
-        publicKeySerializer().serialize(
-          expectSome(resolvedArgs.participantWallet1)
-        ),
-      ]
-    );
-  }
-  if (!resolvedAccounts.participantBalance2.value) {
-    resolvedAccounts.participantBalance2.value = context.eddsa.findPda(
-      programId,
-      [
-        bytes().serialize(new Uint8Array([98, 97, 108, 97, 110, 99, 101])),
-        publicKeySerializer().serialize(
-          expectPublicKey(resolvedAccounts.fractionConfig.value)
-        ),
-        publicKeySerializer().serialize(
-          expectSome(resolvedArgs.participantWallet2)
-        ),
-      ]
-    );
-  }
-  if (!resolvedAccounts.participantBalance3.value) {
-    resolvedAccounts.participantBalance3.value = context.eddsa.findPda(
-      programId,
-      [
-        bytes().serialize(new Uint8Array([98, 97, 108, 97, 110, 99, 101])),
-        publicKeySerializer().serialize(
-          expectPublicKey(resolvedAccounts.fractionConfig.value)
-        ),
-        publicKeySerializer().serialize(
-          expectSome(resolvedArgs.participantWallet3)
-        ),
-      ]
-    );
-  }
-  if (!resolvedAccounts.participantBalance4.value) {
-    resolvedAccounts.participantBalance4.value = context.eddsa.findPda(
-      programId,
-      [
-        bytes().serialize(new Uint8Array([98, 97, 108, 97, 110, 99, 101])),
-        publicKeySerializer().serialize(
-          expectPublicKey(resolvedAccounts.fractionConfig.value)
-        ),
-        publicKeySerializer().serialize(
-          expectSome(resolvedArgs.participantWallet4)
-        ),
-      ]
-    );
-  }
-  if (!resolvedAccounts.botBalance.value) {
-    resolvedAccounts.botBalance.value = context.eddsa.findPda(programId, [
-      bytes().serialize(
-        new Uint8Array([98, 111, 116, 95, 98, 97, 108, 97, 110, 99, 101])
-      ),
-      publicKeySerializer().serialize(
-        expectPublicKey(resolvedAccounts.fractionConfig.value)
-      ),
-      publicKeySerializer().serialize(expectSome(resolvedArgs.botWallet)),
     ]);
   }
   if (!resolvedAccounts.systemProgram.value) {

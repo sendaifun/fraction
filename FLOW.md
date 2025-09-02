@@ -18,15 +18,14 @@ This document outlines the complete flow of the Fraction system, from initial se
    └── Treasury Ready for Distribution
 
 3. Distribution Phase (Bot-Only)
-   ├── Bot Triggers Distribution
+   ├── Bot Triggers Direct Distribution
    ├── Bot Gets 2% Immediately
-   ├── Participants Get Balance Records (98%)
-   └── Treasury Holds Participant Funds
+   ├── Participants Get 98% Directly in ATAs
+   └── Treasury Emptied Completely
 
-4. Withdrawal Phase
-   ├── Participants Withdraw Shares
-   ├── Reset Individual Balances
-   └── Treasury Emptied Gradually
+4. Ready for Next Round (Optional)
+   ├── Client Refunds Treasury
+   └── Repeat Distribution Process
 ```
 
 ---
@@ -43,15 +42,14 @@ This document outlines the complete flow of the Fraction system, from initial se
    - Store fraction configuration data
    - Set participant shares (must total 10,000 BPS)
 
-2. **Create Participant Balance Accounts**
-   - Generate 5 PDAs using `[b"balance", fraction_config.key(), participant_wallet]`
-   - Initialize each with 0 balance
-   - Link to respective participant wallets
+2. **Create Participant Token Accounts**
+   - Ensure all participants have Associated Token Accounts for the treasury mint
+   - These will receive tokens directly during distribution
+   - No balance tracking PDAs needed in the new design
 
-3. **Create Bot Balance Account**
-   - Generate PDA using `[b"bot_balance", fraction_config.key(), bot_wallet]`
-   - Initialize with 0 balance
-   - Track bot's earned incentives
+3. **Store Configuration**
+   - Link fraction to participant wallets for direct distribution
+   - No need to create participant balance PDAs
 
 **Note**: Treasury is NOT created during initialization - it's handled client-side
 
@@ -75,10 +73,11 @@ FractionConfig {
 
 **Accounts Created**:
 - `fraction_config` PDA (owner: program)
-- `participant_balance_0` through `participant_balance_4` PDAs
-- `bot_balance` PDA
 
-**Treasury Created Later**: Client creates treasury ATA separately
+**Accounts Required Later**:
+- Participant Associated Token Accounts (for direct distribution)
+- Bot Associated Token Account (for incentive receipt)
+- Treasury ATA (client creates separately)
 
 ### 1.2 Configure Participants (Optional)
 
@@ -160,16 +159,16 @@ Fraction config: unchanged
 
 ---
 
-## Phase 3: Distribution Phase (Bot-Only)
+## Phase 3: Direct Distribution Phase (Bot-Only)
 
-### 3.1 Bot Triggers Distribution
+### 3.1 Bot Triggers Direct Distribution
 
 **Trigger**: ONLY configured bot wallet calls `claim_and_distribute`
 
 **Prerequisites**:
 - Treasury balance > 0
 - Caller must be the configured `bot_wallet`
-- All participant balance accounts must exist
+- All participant token accounts must exist
 - Bot must sign the transaction
 - Treasury must be an associated token account owned by fraction config PDA
 
@@ -178,8 +177,8 @@ Fraction config: unchanged
 **What Happens**:
 1. **Read Treasury Balance**: Get current treasury token amount
 2. **Calculate Bot Incentive**: 2% of treasury balance
-3. **Calculate Participant Pool**: 98% of treasury balance
-4. **Update Balance Records**: Store participant allocations in PDAs
+3. **Calculate Participant Shares**: 98% of treasury balance distributed by participant percentages
+4. **Execute Direct Transfers**: Transfer tokens directly to all participant ATAs
 
 **Mathematical Flow**:
 ```rust
@@ -187,10 +186,11 @@ let treasury_balance = treasury.amount;
 let bot_amount = treasury_balance * 200 / 10000;        // 2%
 let participant_pool = treasury_balance - bot_amount;   // 98%
 
-// Update participant balance records
+// Direct transfers to participant ATAs
 for participant in participants {
     let participant_amount = participant_pool * participant.shareBps / 10000;
-    participant_balance.amount += participant_amount; // Cumulative
+    // Transfer directly to participant's token account
+    transfer_checked(treasury, participant_token_account, participant_amount);
 }
 ```
 
@@ -200,102 +200,74 @@ for participant in participants {
 // Bot incentive: 20,000 tokens (2%)
 // Participant pool: 980,000 tokens (98%)
 
-// Distribution:
-// Participant 1 (30%): 294,000 tokens
-// Participant 2 (25%): 245,000 tokens
-// Participant 3 (20%): 196,000 tokens
-// Participant 4 (15%): 147,000 tokens
-// Participant 5 (10%): 98,000 tokens
+// Direct Distribution:
+// Participant 1 (30%): 294,000 tokens → P1's ATA
+// Participant 2 (25%): 245,000 tokens → P2's ATA
+// Participant 3 (20%): 196,000 tokens → P3's ATA
+// Participant 4 (15%): 147,000 tokens → P4's ATA
+// Participant 5 (10%): 98,000 tokens → P5's ATA
 ```
 
-### 3.3 Execute Distribution
+### 3.3 Execute Direct Distribution
 
 **What Happens**:
 1. **Transfer Bot Incentive**: Move 2% immediately to bot's token account
-2. **Update Participant Balances**: Store allocated amounts in PDAs
-3. **Reset Total Collected**: Set `total_collected = 0` 
-4. **Update Bot Balance PDA**: Track bot's earned amount
-5. **Treasury Retains Funds**: 98% stays in treasury for withdrawals
+2. **Transfer Participant Shares**: Move tokens directly to each participant's ATA
+3. **Empty Treasury**: All funds distributed, treasury balance becomes 0
+4. **Atomic Operation**: All transfers happen in single transaction
 
 **Transfer Flow**:
 ```
 Treasury (2%) → Bot Token Account (immediate)
-Treasury (98%) → Stays in Treasury (for withdrawals)
+Treasury (98%) → Participant ATAs (immediate)
                 ↓
-        Participant Balance PDAs (records updated)
+        Treasury Balance = 0
 ```
 
 **State After Distribution**:
 ```rust
-// Bot Balance PDA
-amount: 20000       // Bot's earned incentive
-
 // Bot Token Account
 balance: +20000     // Bot received tokens immediately
 
-// Participant Balance PDAs
-participant_0: 294000  // 30% of 980,000
-participant_1: 245000  // 25% of 980,000
-participant_2: 196000  // 20% of 980,000
-participant_3: 147000  // 15% of 980,000
-participant_4: 98000   // 10% of 980,000
+// Participant Token Accounts
+participant_0_ata: +294000  // 30% of 980,000
+participant_1_ata: +245000  // 25% of 980,000
+participant_2_ata: +196000  // 20% of 980,000
+participant_3_ata: +147000  // 15% of 980,000
+participant_4_ata: +98000   // 10% of 980,000
 
 // Treasury
-balance: 980000  // Participant funds ready for withdrawal
+balance: 0  // Completely emptied
 ```
 
 ---
 
-## Phase 4: Withdrawal Phase
+## Phase 4: Ready for Next Round (Optional)
 
-### 4.1 Individual Participant Withdrawals
+### 4.1 Treasury Refunding
 
-**Trigger**: Individual participant calls `withdraw_share`
-
-**Prerequisites**:
-- Participant must have allocated balance > 0
-- Participant must sign the transaction
-- Participant must provide correct balance PDA
-- Treasury must be an associated token account owned by fraction config PDA
+**Trigger**: Client can fund treasury again for additional rounds
 
 **What Happens**:
-1. **Validate Withdrawal**: Ensure participant has allocated funds > 0
-2. **Transfer Tokens**: Move tokens from treasury to participant's token account
-3. **Reset Balance**: Set participant balance PDA to 0  
-4. **Update Treasury**: Decrease treasury balance
+1. **Refund Treasury**: Client transfers more tokens to treasury
+2. **Ready for Distribution**: Treasury balance > 0, ready for next bot distribution
+3. **Repeat Process**: Bot can trigger distribution again when ready
 
-**Withdrawal Flow**:
+**Refund Flow**:
 ```
-Participant Balance PDA (check amount) → Treasury → Participant Token Account
-                    ↓
-              Reset PDA to 0
+Client Token Account → Treasury → Ready for Next Distribution
 ```
 
-**Example Withdrawal**:
+**Example Multi-Round**:
 ```rust
-// Participant 1 withdraws their 294,000 tokens
-withdraw_share()
+// Round 1: Distribute 1,000,000 tokens
+// Treasury: 0
 
-// Result:
-// - Participant 1 balance PDA: 0
-// - Participant 1 token account: +294,000
-// - Treasury balance: -294,000
-```
+// Round 2: Client funds 500,000 tokens
+// Treasury: 500,000 → Bot distributes → Treasury: 0
 
-### 4.2 Multiple Withdrawals
-
-**What Happens**:
-1. **Independent Withdrawals**: Each participant can withdraw independently
-2. **No Interference**: One participant's withdrawal doesn't affect others
-3. **Flexible Timing**: Withdrawals can happen at any time after distribution
-
-**Withdrawal Timeline Example**:
-```
-Day 1: Participant 1 withdraws 294,000
-Day 3: Participant 3 withdraws 196,000
-Day 7: Participant 5 withdraws 98,000
-Day 10: Participant 2 withdraws 245,000
-Day 14: Participant 4 withdraws 147,000
+// Round 3: Client funds 2,000,000 tokens  
+// Treasury: 2,000,000 → Bot distributes → Treasury: 0
 ```
 
 ---
@@ -326,35 +298,26 @@ Week 2: Client transfers 3000 USDC to treasury
 Treasury Balance: 3000 USDC ready for distribution
 ```
 
-**Phase 3: Distribution**
+**Phase 3: Direct Distribution**
 ```
-Bot triggers distribution:
-- Bot receives: 60 USDC (2%) immediately
-- Team records: 2940 USDC (98%) allocated
+Bot triggers direct distribution:
+- Bot receives: 60 USDC (2%) immediately in bot's ATA
+- Team receives: 2940 USDC (98%) distributed directly to their ATAs
 
-Allocation Records:
-- Member 1: 882 USDC (30%)
-- Member 2: 735 USDC (25%)
-- Member 3: 588 USDC (20%)
-- Member 4: 441 USDC (15%)
-- Member 5: 294 USDC (10%)
-```
-
-**Phase 4: Withdrawals**
-```
-Day 1: Member 1 withdraws 882 USDC
-Day 2: Member 3 withdraws 588 USDC
-Day 3: Member 5 withdraws 294 USDC
-Day 4: Member 2 withdraws 735 USDC
-Day 5: Member 4 withdraws 441 USDC
+Direct Distribution:
+- Member 1: 882 USDC → transferred to Member 1's ATA
+- Member 2: 735 USDC → transferred to Member 2's ATA
+- Member 3: 588 USDC → transferred to Member 3's ATA
+- Member 4: 441 USDC → transferred to Member 4's ATA
+- Member 5: 294 USDC → transferred to Member 5's ATA
 ```
 
 **Final State**:
 ```
-- All participants received their allocated shares
+- All participants received their tokens directly in their ATAs
 - Bot earned 60 USDC incentive immediately
-- Treasury empty (ready for next cycle)
-- All balance PDAs reset to 0
+- Treasury empty (ready for next cycle if needed)
+- No withdrawal step required
 ```
 
 ---
@@ -366,19 +329,18 @@ Day 5: Member 4 withdraws 441 USDC
 Initialize: Authority only
 Update: Authority only (with share validation)
 Treasury Management: Client-side (anyone)
-Distribute: Bot wallet only (with bot signature)
-Withdraw: Participant only (with participant signature)
+Direct Distribution: Bot wallet only (with bot signature)
 ```
 
 ### Validation Flow
 ```
 1. Account Ownership: Verify all accounts belong to correct entities
-2. PDA Seeds: Validate all PDA derivations
+2. PDA Seeds: Validate PDA derivations for fraction config
 3. Signatures: Ensure proper signing requirements
 4. Constraints: Check Anchor constraints (has_one, seeds, etc.)
 5. Mathematical: Verify calculations and overflow protection
 6. Share Validation: Ensure participant shares sum to 10,000 BPS
-7. Associated Token Accounts: Verify treasury ATA constraints
+7. Associated Token Accounts: Verify treasury and participant ATA constraints
 ```
 
 ### Error Handling Flow
@@ -409,18 +371,11 @@ Processing: Create ATA + Transfer tokens
 Output: Funded treasury ready for distribution
 ```
 
-**Distribute**:
+**Direct Distribution**:
 ```
-Input: Bot wallet signature + All accounts
-Processing: Calculate + Transfer bot share + Update records
-Output: Bot gets 2%, participants get balance records
-```
-
-**Withdraw**:
-```
-Input: Participant signature
-Processing: Transfer from treasury + Reset balance
-Output: Participant tokens + Balance reset
+Input: Bot wallet signature + All accounts + Participant ATAs
+Processing: Calculate + Transfer bot share + Transfer participant shares directly
+Output: Bot gets 2%, participants get tokens directly in ATAs, treasury emptied
 ```
 
 ---
@@ -432,8 +387,8 @@ Output: Participant tokens + Balance reset
 3. **Access Control**: Clear separation of who can perform what actions
 4. **Mathematical Precision**: Basis points system ensures accurate calculations
 5. **Security First**: All operations validated before execution
-6. **Flexible Timing**: Users control when to deposit and withdraw
-7. **Automated Distribution**: Bot handles complex distribution logic
-8. **Independent Withdrawals**: Participants can withdraw at their convenience
+6. **Direct Distribution**: Bot transfers funds directly to participant ATAs in single transaction
+7. **Simplified UX**: No manual withdrawal steps required for participants
+8. **Immediate Settlement**: All parties receive tokens instantly during distribution
 
-This flow design ensures the system is secure, efficient, and user-friendly while maintaining the integrity of fund distribution and participant management.
+This flow design ensures the system is secure, efficient, and user-friendly while maintaining the integrity of fund distribution and participant management. The direct distribution model eliminates the complexity of separate withdrawal steps and provides immediate token settlement for all participants.

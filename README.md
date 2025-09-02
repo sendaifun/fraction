@@ -4,17 +4,18 @@ A secure, automated token distribution system built on Solana that distributes f
 
 ## Overview
 
-Fraction is a Solana program that enables automated token distribution among multiple participants. Clients fund a shared treasury, and a designated bot triggers distribution where participants receive their allocated shares and the bot earns a fixed 2% incentive for managing the distribution.
+Fraction is a Solana program that enables automated token distribution among multiple participants. Clients fund a shared treasury, and a designated bot triggers direct distribution where participants receive their allocated shares immediately in their token accounts, while the bot earns a fixed 2% incentive for managing the distribution.
 
 ## Key Features
 
 - **Secure Distribution**: Built with Anchor framework for maximum security
 - **Bot-Only Distribution**: Only designated bot wallet can trigger distributions
+- **Direct Distribution**: Participants receive tokens directly in their ATAs during distribution
 - **Flexible Shares**: Customizable participant share percentages (up to 5 participants)
 - **Fixed Bot Incentive**: Consistent 2% reward for distribution management
 - **Client-Managed Treasury**: Treasury creation and funding handled client-side
-- **Immediate Bot Rewards**: Bot receives incentive tokens instantly upon distribution
-- **Individual Withdrawals**: Participants can withdraw their allocated funds independently
+- **Immediate Distribution**: Both bot and participants receive tokens instantly upon distribution
+- **No Withdrawal Step**: Eliminates need for separate withdrawal instructions
 - **Multiple Rounds**: Treasury can be refunded for multiple distribution rounds
 
 ## Architecture
@@ -23,14 +24,15 @@ Fraction is a Solana program that enables automated token distribution among mul
 
 1. **Fraction Config**: Main configuration PDA storing participant details and bot wallet
 2. **Treasury**: Associated Token Account (client-managed) holding funds for distribution
-3. **Participant Balances**: Individual PDAs tracking each participant's allocated amount  
-4. **Bot Balance**: PDA tracking bot's earned incentives
+3. **Direct Distribution**: Bot transfers funds directly to participant ATAs during claim_and_distribute
 
 ### Distribution Flow
 
 ```
-Client Creates Treasury → Client Funds Treasury → Bot Distributes (Bot: 2% immediate, Participants: 98% tracked) → Individual Withdrawals
+Client Creates Treasury → Client Funds Treasury → Bot Distributes Directly (Bot: 2%, Participants: 98% directly to ATAs) → Treasury Empty
 ```
+
+## Instructions
 
 ## Instructions
 
@@ -42,12 +44,6 @@ initialize_fraction(
     name: String,
     participants: [Participant; 5],
     bot_wallet: Pubkey,
-    // Individual participant wallets for PDA derivation
-    participant_wallet_0: Pubkey,
-    participant_wallet_1: Pubkey,
-    participant_wallet_2: Pubkey,
-    participant_wallet_3: Pubkey,
-    participant_wallet_4: Pubkey,
 )
 ```
 
@@ -76,25 +72,23 @@ await transfer(connection, payer, userTokenAccount, treasury.address, authority,
 ```
 
 ### 4. Claim and Distribute
-Trigger distribution of treasury funds (bot only).
+Trigger direct distribution of treasury funds to all participants (bot only).
 
 ```rust
 claim_and_distribute(name: String)
 ```
 - Only the designated bot wallet can call this instruction
-- Bot receives 2% immediately, participants get balance records updated
-- Treasury funds are preserved for participant withdrawals
+- Bot receives 2% immediately, participants receive 98% directly in their ATAs
+- Treasury funds are completely distributed and treasury is emptied
 - Treasury must be an associated token account owned by the fraction config PDA
 
-### 5. Withdraw Share
-Individual participants withdraw their allocated tokens.
+### 5. No Withdrawal Step Required
+Participants receive tokens directly during distribution - no additional steps needed.
 
-```rust
-withdraw_share(name: String)
-```
-- Each participant can withdraw their allocated amount from treasury
-- Participant balance record is reset to 0 after withdrawal
-- Treasury must be an associated token account owned by the fraction config PDA
+- Tokens are transferred directly to participant ATAs during `claim_and_distribute`
+- No separate withdrawal instruction required
+- No balance tracking PDAs needed
+- Simplified user experience with immediate token receipt
 
 ## Account Structure
 
@@ -115,16 +109,6 @@ pub struct FractionConfig {
 pub struct Participant {
     pub wallet: Pubkey,    // Participant's wallet
     pub share_bps: u16,    // Share in basis points (10000 = 100%)
-}
-```
-
-### ParticipantBalance
-```rust
-pub struct ParticipantBalance {
-    pub fraction: Pubkey,     // Associated fraction
-    pub participant: Pubkey,  // Participant wallet
-    pub amount: u64,          // Allocated amount
-    pub bump: u8,             // PDA bump seed
 }
 ```
 
@@ -168,10 +152,10 @@ anchor test
 
 The project includes a comprehensive test suite with 8 test cases covering:
 
-- **Core Functionality** (4 tests): Initialize, update, distribute, withdraw
-- **Treasury Management** (2 tests): Client-side treasury creation and funding
-- **Security & Authorization** (1 test): Access control and validation
-- **Complete Lifecycle** (1 test): End-to-end flow with all participants
+- **Core Functionality** (4 tests): Initialize, update, create treasury, direct distribution
+- **Multiple Distribution Rounds** (1 test): Supports multiple funding and distribution cycles
+- **Error Handling** (2 tests): Empty treasury and unauthorized access validation
+- **Security & Authorization** (1 test): Invalid share distribution rejection
 
 **Test Results**: 8/8 passing (100% success rate)
 
@@ -180,7 +164,7 @@ Run tests with:
 anchor test
 ```
 
-All tests validate the complete lifecycle: initialization → treasury management → bot-triggered distribution → participant withdrawals.
+All tests validate the complete lifecycle: initialization → treasury management → bot-triggered direct distribution → immediate participant receipt.
 
 ## Complete Workflow
 
@@ -199,20 +183,20 @@ All tests validate the complete lifecycle: initialization → treasury managemen
 3. **Distribution Phase** (Bot-Only)
    - Only the designated bot wallet can trigger distribution
    - Bot receives 2% of treasury funds immediately
-   - Remaining 98% is allocated to participant balance records
-   - Treasury retains participant funds for individual withdrawals
+   - Participants receive 98% directly in their token accounts
+   - Treasury is completely emptied after distribution
 
-4. **Withdrawal Phase** (Individual Participants)
-   - Each participant can withdraw their allocated tokens anytime
-   - Tokens are transferred from treasury to participant's token account
-   - Participant's balance record is reset to 0 after withdrawal
-   - Process continues until all participants have withdrawn
+4. **Ready for Next Round** (Optional)
+   - Client can refund treasury for additional distribution rounds
+   - Process repeats: fund treasury → bot distributes → participants receive tokens
+   - No manual withdrawal steps required
 
 ### Key Benefits
 - **Security**: Bot-only distribution prevents unauthorized access
-- **Flexibility**: Participants withdraw when convenient
-- **Efficiency**: Single distribution updates all balances simultaneously
-- **Transparency**: All allocations are tracked on-chain
+- **Efficiency**: Single distribution transfers tokens to all participants simultaneously
+- **Simplicity**: No separate withdrawal step required for participants
+- **Immediate**: Participants receive tokens instantly during distribution
+- **Transparency**: All transfers are atomic and visible on-chain
 
 ## Usage Examples
 
@@ -241,21 +225,10 @@ await program.methods
     "my-fraction",
     participants,
     botWallet.publicKey,
-    participant1.publicKey,
-    participant2.publicKey,
-    participant3.publicKey,
-    participant4.publicKey,
-    participant5.publicKey,
   )
   .accountsPartial({
     authority: authority.publicKey,
     fractionConfig: fractionConfigPda,
-    participantBalance0: participantBalance0Pda,
-    participantBalance1: participantBalance1Pda,
-    participantBalance2: participantBalance2Pda,
-    participantBalance3: participantBalance3Pda,
-    participantBalance4: participantBalance4Pda,
-    botBalance: botBalancePda,
   })
   .signers([])
   .rpc();
@@ -269,40 +242,26 @@ await transfer(
   connection, payer, userTokenAccount, treasury.address, authority, 1000000
 );
 
-// Trigger distribution (bot only)
+// Trigger direct distribution (bot only)
 await program.methods
   .claimAndDistribute("my-fraction")
   .accountsPartial({
-    bot: botWallet.publicKey,
     authority: authority.publicKey,
+    bot: botWallet.publicKey,
     fractionConfig: fractionConfigPda,
     treasury: treasury.address,
     treasuryMint: mintAddress,
     botTokenAccount: botTokenAccount,
-    participantBalance0: participantBalance0Pda,
-    participantBalance1: participantBalance1Pda,
-    participantBalance2: participantBalance2Pda,
-    participantBalance3: participantBalance3Pda,
-    participantBalance4: participantBalance4Pda,
-    botBalance: botBalancePda,
+    participantTokenAccount0: participant1TokenAccount,
+    participantTokenAccount1: participant2TokenAccount,
+    participantTokenAccount2: participant3TokenAccount,
+    participantTokenAccount3: participant4TokenAccount,
+    participantTokenAccount4: participant5TokenAccount,
   })
   .signers([botWallet])
   .rpc();
 
-// Participant withdraws (individual call)
-await program.methods
-  .withdrawShare("my-fraction")
-  .accountsPartial({
-    participant: participant1.publicKey,
-    authority: authority.publicKey,
-    fractionConfig: fractionConfigPda,
-    participantBalance: participantBalance0Pda,
-    treasury: treasury.address,
-    treasuryMint: mintAddress,
-    participantTokenAccount: participant1TokenAccount,
-  })
-  .signers([participant1])
-  .rpc();
+// No withdrawal step needed - participants already received tokens!
 ```
 
 ## Security Features

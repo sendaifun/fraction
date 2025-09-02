@@ -6,8 +6,6 @@
 //!
 
   pub(crate) mod r#fraction_config;
-  pub(crate) mod r#participant_balance;
 
   pub use self::r#fraction_config::*;
-  pub use self::r#participant_balance::*;
 

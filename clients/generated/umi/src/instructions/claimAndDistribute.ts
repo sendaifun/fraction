@@ -38,12 +38,11 @@ export type ClaimAndDistributeInstructionAccounts = {
   treasury?: PublicKey | Pda;
   treasuryMint: PublicKey | Pda;
   botTokenAccount: PublicKey | Pda;
-  participantBalance0: PublicKey | Pda;
-  participantBalance1: PublicKey | Pda;
-  participantBalance2: PublicKey | Pda;
-  participantBalance3: PublicKey | Pda;
-  participantBalance4: PublicKey | Pda;
-  botBalance?: PublicKey | Pda;
+  participantTokenAccount0: PublicKey | Pda;
+  participantTokenAccount1: PublicKey | Pda;
+  participantTokenAccount2: PublicKey | Pda;
+  participantTokenAccount3: PublicKey | Pda;
+  participantTokenAccount4: PublicKey | Pda;
   tokenProgram: PublicKey | Pda;
 };
 
@@ -94,7 +93,7 @@ export function claimAndDistribute(
   // Program ID.
   const programId = context.programs.getPublicKey(
     'fraction',
-    'FM9hKTFN98M2uo7zw2huAbx7vJTQpfgFuxr9rVCTt8UY'
+    'Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg'
   );
 
   // Accounts.
@@ -125,38 +124,33 @@ export function claimAndDistribute(
       isWritable: true as boolean,
       value: input.botTokenAccount ?? null,
     },
-    participantBalance0: {
+    participantTokenAccount0: {
       index: 6,
       isWritable: true as boolean,
-      value: input.participantBalance0 ?? null,
+      value: input.participantTokenAccount0 ?? null,
     },
-    participantBalance1: {
+    participantTokenAccount1: {
       index: 7,
       isWritable: true as boolean,
-      value: input.participantBalance1 ?? null,
+      value: input.participantTokenAccount1 ?? null,
     },
-    participantBalance2: {
+    participantTokenAccount2: {
       index: 8,
       isWritable: true as boolean,
-      value: input.participantBalance2 ?? null,
+      value: input.participantTokenAccount2 ?? null,
     },
-    participantBalance3: {
+    participantTokenAccount3: {
       index: 9,
       isWritable: true as boolean,
-      value: input.participantBalance3 ?? null,
+      value: input.participantTokenAccount3 ?? null,
     },
-    participantBalance4: {
+    participantTokenAccount4: {
       index: 10,
       isWritable: true as boolean,
-      value: input.participantBalance4 ?? null,
-    },
-    botBalance: {
-      index: 11,
-      isWritable: true as boolean,
-      value: input.botBalance ?? null,
+      value: input.participantTokenAccount4 ?? null,
     },
     tokenProgram: {
-      index: 12,
+      index: 11,
       isWritable: false as boolean,
       value: input.tokenProgram ?? null,
     },
@@ -197,19 +191,6 @@ export function claimAndDistribute(
         ),
       ]
     );
-  }
-  if (!resolvedAccounts.botBalance.value) {
-    resolvedAccounts.botBalance.value = context.eddsa.findPda(programId, [
-      bytes().serialize(
-        new Uint8Array([98, 111, 116, 95, 98, 97, 108, 97, 110, 99, 101])
-      ),
-      publicKeySerializer().serialize(
-        expectPublicKey(resolvedAccounts.fractionConfig.value)
-      ),
-      publicKeySerializer().serialize(
-        expectPublicKey(resolvedAccounts.bot.value)
-      ),
-    ]);
   }
 
   // Accounts in order.

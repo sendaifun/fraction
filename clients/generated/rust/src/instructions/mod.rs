@@ -8,10 +8,8 @@
   pub(crate) mod r#claim_and_distribute;
   pub(crate) mod r#initialize_fraction;
   pub(crate) mod r#update_fraction;
-  pub(crate) mod r#withdraw_share;
 
   pub use self::r#claim_and_distribute::*;
   pub use self::r#initialize_fraction::*;
   pub use self::r#update_fraction::*;
-  pub use self::r#withdraw_share::*;
 

@@ -23,24 +23,6 @@ pub struct InitializeFraction {
           pub fraction_config: solana_pubkey::Pubkey,
           
               
-          pub participant_balance0: solana_pubkey::Pubkey,
-          
-              
-          pub participant_balance1: solana_pubkey::Pubkey,
-          
-              
-          pub participant_balance2: solana_pubkey::Pubkey,
-          
-              
-          pub participant_balance3: solana_pubkey::Pubkey,
-          
-              
-          pub participant_balance4: solana_pubkey::Pubkey,
-          
-              
-          pub bot_balance: solana_pubkey::Pubkey,
-          
-              
           pub system_program: solana_pubkey::Pubkey,
       }
 
@@ -51,37 +33,13 @@ impl InitializeFraction {
   #[allow(clippy::arithmetic_side_effects)]
   #[allow(clippy::vec_init_then_push)]
   pub fn instruction_with_remaining_accounts(&self, args: InitializeFractionInstructionArgs, remaining_accounts: &[solana_instruction::AccountMeta]) -> solana_instruction::Instruction {
-    let mut accounts = Vec::with_capacity(9+ remaining_accounts.len());
+    let mut accounts = Vec::with_capacity(3+ remaining_accounts.len());
                             accounts.push(solana_instruction::AccountMeta::new(
             self.authority,
             true
           ));
                                           accounts.push(solana_instruction::AccountMeta::new(
             self.fraction_config,
-            false
-          ));
-                                          accounts.push(solana_instruction::AccountMeta::new(
-            self.participant_balance0,
-            false
-          ));
-                                          accounts.push(solana_instruction::AccountMeta::new(
-            self.participant_balance1,
-            false
-          ));
-                                          accounts.push(solana_instruction::AccountMeta::new(
-            self.participant_balance2,
-            false
-          ));
-                                          accounts.push(solana_instruction::AccountMeta::new(
-            self.participant_balance3,
-            false
-          ));
-                                          accounts.push(solana_instruction::AccountMeta::new(
-            self.participant_balance4,
-            false
-          ));
-                                          accounts.push(solana_instruction::AccountMeta::new(
-            self.bot_balance,
             false
           ));
                                           accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -105,13 +63,13 @@ impl InitializeFraction {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
  pub struct InitializeFractionInstructionData {
             discriminator: [u8; 8],
-                                                      }
+                        }
 
 impl InitializeFractionInstructionData {
   pub fn new() -> Self {
     Self {
                         discriminator: [159, 21, 140, 42, 52, 59, 103, 82],
-                                                                                                                                  }
+                                                            }
   }
 }
 
@@ -127,11 +85,6 @@ impl Default for InitializeFractionInstructionData {
                   pub name: String,
                 pub participants: [Participant; 5],
                 pub bot_wallet: Pubkey,
-                pub participant_wallet0: Pubkey,
-                pub participant_wallet1: Pubkey,
-                pub participant_wallet2: Pubkey,
-                pub participant_wallet3: Pubkey,
-                pub participant_wallet4: Pubkey,
       }
 
 
@@ -141,32 +94,15 @@ impl Default for InitializeFractionInstructionData {
 ///
                       ///   0. `[writable, signer]` authority
                 ///   1. `[writable]` fraction_config
-                ///   2. `[writable]` participant_balance0
-                ///   3. `[writable]` participant_balance1
-                ///   4. `[writable]` participant_balance2
-                ///   5. `[writable]` participant_balance3
-                ///   6. `[writable]` participant_balance4
-                ///   7. `[writable]` bot_balance
-                ///   8. `[optional]` system_program (default to `11111111111111111111111111111111`)
+                ///   2. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
 pub struct InitializeFractionBuilder {
             authority: Option<solana_pubkey::Pubkey>,
                 fraction_config: Option<solana_pubkey::Pubkey>,
-                participant_balance0: Option<solana_pubkey::Pubkey>,
-                participant_balance1: Option<solana_pubkey::Pubkey>,
-                participant_balance2: Option<solana_pubkey::Pubkey>,
-                participant_balance3: Option<solana_pubkey::Pubkey>,
-                participant_balance4: Option<solana_pubkey::Pubkey>,
-                bot_balance: Option<solana_pubkey::Pubkey>,
                 system_program: Option<solana_pubkey::Pubkey>,
                         name: Option<String>,
                 participants: Option<[Participant; 5]>,
                 bot_wallet: Option<Pubkey>,
-                participant_wallet0: Option<Pubkey>,
-                participant_wallet1: Option<Pubkey>,
-                participant_wallet2: Option<Pubkey>,
-                participant_wallet3: Option<Pubkey>,
-                participant_wallet4: Option<Pubkey>,
         __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
@@ -182,36 +118,6 @@ impl InitializeFractionBuilder {
             #[inline(always)]
     pub fn fraction_config(&mut self, fraction_config: solana_pubkey::Pubkey) -> &mut Self {
                         self.fraction_config = Some(fraction_config);
-                    self
-    }
-            #[inline(always)]
-    pub fn participant_balance0(&mut self, participant_balance0: solana_pubkey::Pubkey) -> &mut Self {
-                        self.participant_balance0 = Some(participant_balance0);
-                    self
-    }
-            #[inline(always)]
-    pub fn participant_balance1(&mut self, participant_balance1: solana_pubkey::Pubkey) -> &mut Self {
-                        self.participant_balance1 = Some(participant_balance1);
-                    self
-    }
-            #[inline(always)]
-    pub fn participant_balance2(&mut self, participant_balance2: solana_pubkey::Pubkey) -> &mut Self {
-                        self.participant_balance2 = Some(participant_balance2);
-                    self
-    }
-            #[inline(always)]
-    pub fn participant_balance3(&mut self, participant_balance3: solana_pubkey::Pubkey) -> &mut Self {
-                        self.participant_balance3 = Some(participant_balance3);
-                    self
-    }
-            #[inline(always)]
-    pub fn participant_balance4(&mut self, participant_balance4: solana_pubkey::Pubkey) -> &mut Self {
-                        self.participant_balance4 = Some(participant_balance4);
-                    self
-    }
-            #[inline(always)]
-    pub fn bot_balance(&mut self, bot_balance: solana_pubkey::Pubkey) -> &mut Self {
-                        self.bot_balance = Some(bot_balance);
                     self
     }
             /// `[optional account, default to '11111111111111111111111111111111']`
@@ -235,31 +141,6 @@ impl InitializeFractionBuilder {
         self.bot_wallet = Some(bot_wallet);
         self
       }
-                #[inline(always)]
-      pub fn participant_wallet0(&mut self, participant_wallet0: Pubkey) -> &mut Self {
-        self.participant_wallet0 = Some(participant_wallet0);
-        self
-      }
-                #[inline(always)]
-      pub fn participant_wallet1(&mut self, participant_wallet1: Pubkey) -> &mut Self {
-        self.participant_wallet1 = Some(participant_wallet1);
-        self
-      }
-                #[inline(always)]
-      pub fn participant_wallet2(&mut self, participant_wallet2: Pubkey) -> &mut Self {
-        self.participant_wallet2 = Some(participant_wallet2);
-        self
-      }
-                #[inline(always)]
-      pub fn participant_wallet3(&mut self, participant_wallet3: Pubkey) -> &mut Self {
-        self.participant_wallet3 = Some(participant_wallet3);
-        self
-      }
-                #[inline(always)]
-      pub fn participant_wallet4(&mut self, participant_wallet4: Pubkey) -> &mut Self {
-        self.participant_wallet4 = Some(participant_wallet4);
-        self
-      }
         /// Add an additional account to the instruction.
   #[inline(always)]
   pub fn add_remaining_account(&mut self, account: solana_instruction::AccountMeta) -> &mut Self {
@@ -277,23 +158,12 @@ impl InitializeFractionBuilder {
     let accounts = InitializeFraction {
                               authority: self.authority.expect("authority is not set"),
                                         fraction_config: self.fraction_config.expect("fraction_config is not set"),
-                                        participant_balance0: self.participant_balance0.expect("participant_balance0 is not set"),
-                                        participant_balance1: self.participant_balance1.expect("participant_balance1 is not set"),
-                                        participant_balance2: self.participant_balance2.expect("participant_balance2 is not set"),
-                                        participant_balance3: self.participant_balance3.expect("participant_balance3 is not set"),
-                                        participant_balance4: self.participant_balance4.expect("participant_balance4 is not set"),
-                                        bot_balance: self.bot_balance.expect("bot_balance is not set"),
                                         system_program: self.system_program.unwrap_or(solana_pubkey::pubkey!("11111111111111111111111111111111")),
                       };
           let args = InitializeFractionInstructionArgs {
                                                               name: self.name.clone().expect("name is not set"),
                                                                   participants: self.participants.clone().expect("participants is not set"),
                                                                   bot_wallet: self.bot_wallet.clone().expect("bot_wallet is not set"),
-                                                                  participant_wallet0: self.participant_wallet0.clone().expect("participant_wallet0 is not set"),
-                                                                  participant_wallet1: self.participant_wallet1.clone().expect("participant_wallet1 is not set"),
-                                                                  participant_wallet2: self.participant_wallet2.clone().expect("participant_wallet2 is not set"),
-                                                                  participant_wallet3: self.participant_wallet3.clone().expect("participant_wallet3 is not set"),
-                                                                  participant_wallet4: self.participant_wallet4.clone().expect("participant_wallet4 is not set"),
                                     };
     
     accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
@@ -308,24 +178,6 @@ impl InitializeFractionBuilder {
                 
                     
               pub fraction_config: &'b solana_account_info::AccountInfo<'a>,
-                
-                    
-              pub participant_balance0: &'b solana_account_info::AccountInfo<'a>,
-                
-                    
-              pub participant_balance1: &'b solana_account_info::AccountInfo<'a>,
-                
-                    
-              pub participant_balance2: &'b solana_account_info::AccountInfo<'a>,
-                
-                    
-              pub participant_balance3: &'b solana_account_info::AccountInfo<'a>,
-                
-                    
-              pub participant_balance4: &'b solana_account_info::AccountInfo<'a>,
-                
-                    
-              pub bot_balance: &'b solana_account_info::AccountInfo<'a>,
                 
                     
               pub system_program: &'b solana_account_info::AccountInfo<'a>,
@@ -343,24 +195,6 @@ pub struct InitializeFractionCpi<'a, 'b> {
           pub fraction_config: &'b solana_account_info::AccountInfo<'a>,
           
               
-          pub participant_balance0: &'b solana_account_info::AccountInfo<'a>,
-          
-              
-          pub participant_balance1: &'b solana_account_info::AccountInfo<'a>,
-          
-              
-          pub participant_balance2: &'b solana_account_info::AccountInfo<'a>,
-          
-              
-          pub participant_balance3: &'b solana_account_info::AccountInfo<'a>,
-          
-              
-          pub participant_balance4: &'b solana_account_info::AccountInfo<'a>,
-          
-              
-          pub bot_balance: &'b solana_account_info::AccountInfo<'a>,
-          
-              
           pub system_program: &'b solana_account_info::AccountInfo<'a>,
             /// The arguments for the instruction.
     pub __args: InitializeFractionInstructionArgs,
@@ -376,12 +210,6 @@ impl<'a, 'b> InitializeFractionCpi<'a, 'b> {
       __program: program,
               authority: accounts.authority,
               fraction_config: accounts.fraction_config,
-              participant_balance0: accounts.participant_balance0,
-              participant_balance1: accounts.participant_balance1,
-              participant_balance2: accounts.participant_balance2,
-              participant_balance3: accounts.participant_balance3,
-              participant_balance4: accounts.participant_balance4,
-              bot_balance: accounts.bot_balance,
               system_program: accounts.system_program,
                     __args: args,
           }
@@ -406,37 +234,13 @@ impl<'a, 'b> InitializeFractionCpi<'a, 'b> {
     signers_seeds: &[&[&[u8]]],
     remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)]
   ) -> solana_program_error::ProgramResult {
-    let mut accounts = Vec::with_capacity(9+ remaining_accounts.len());
+    let mut accounts = Vec::with_capacity(3+ remaining_accounts.len());
                             accounts.push(solana_instruction::AccountMeta::new(
             *self.authority.key,
             true
           ));
                                           accounts.push(solana_instruction::AccountMeta::new(
             *self.fraction_config.key,
-            false
-          ));
-                                          accounts.push(solana_instruction::AccountMeta::new(
-            *self.participant_balance0.key,
-            false
-          ));
-                                          accounts.push(solana_instruction::AccountMeta::new(
-            *self.participant_balance1.key,
-            false
-          ));
-                                          accounts.push(solana_instruction::AccountMeta::new(
-            *self.participant_balance2.key,
-            false
-          ));
-                                          accounts.push(solana_instruction::AccountMeta::new(
-            *self.participant_balance3.key,
-            false
-          ));
-                                          accounts.push(solana_instruction::AccountMeta::new(
-            *self.participant_balance4.key,
-            false
-          ));
-                                          accounts.push(solana_instruction::AccountMeta::new(
-            *self.bot_balance.key,
             false
           ));
                                           accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -459,16 +263,10 @@ impl<'a, 'b> InitializeFractionCpi<'a, 'b> {
       accounts,
       data,
     };
-    let mut account_infos = Vec::with_capacity(10 + remaining_accounts.len());
+    let mut account_infos = Vec::with_capacity(4 + remaining_accounts.len());
     account_infos.push(self.__program.clone());
                   account_infos.push(self.authority.clone());
                         account_infos.push(self.fraction_config.clone());
-                        account_infos.push(self.participant_balance0.clone());
-                        account_infos.push(self.participant_balance1.clone());
-                        account_infos.push(self.participant_balance2.clone());
-                        account_infos.push(self.participant_balance3.clone());
-                        account_infos.push(self.participant_balance4.clone());
-                        account_infos.push(self.bot_balance.clone());
                         account_infos.push(self.system_program.clone());
               remaining_accounts.iter().for_each(|remaining_account| account_infos.push(remaining_account.0.clone()));
 
@@ -486,13 +284,7 @@ impl<'a, 'b> InitializeFractionCpi<'a, 'b> {
 ///
                       ///   0. `[writable, signer]` authority
                 ///   1. `[writable]` fraction_config
-                ///   2. `[writable]` participant_balance0
-                ///   3. `[writable]` participant_balance1
-                ///   4. `[writable]` participant_balance2
-                ///   5. `[writable]` participant_balance3
-                ///   6. `[writable]` participant_balance4
-                ///   7. `[writable]` bot_balance
-          ///   8. `[]` system_program
+          ///   2. `[]` system_program
 #[derive(Clone, Debug)]
 pub struct InitializeFractionCpiBuilder<'a, 'b> {
   instruction: Box<InitializeFractionCpiBuilderInstruction<'a, 'b>>,
@@ -504,21 +296,10 @@ impl<'a, 'b> InitializeFractionCpiBuilder<'a, 'b> {
       __program: program,
               authority: None,
               fraction_config: None,
-              participant_balance0: None,
-              participant_balance1: None,
-              participant_balance2: None,
-              participant_balance3: None,
-              participant_balance4: None,
-              bot_balance: None,
               system_program: None,
                                             name: None,
                                 participants: None,
                                 bot_wallet: None,
-                                participant_wallet0: None,
-                                participant_wallet1: None,
-                                participant_wallet2: None,
-                                participant_wallet3: None,
-                                participant_wallet4: None,
                     __remaining_accounts: Vec::new(),
     });
     Self { instruction }
@@ -531,36 +312,6 @@ impl<'a, 'b> InitializeFractionCpiBuilder<'a, 'b> {
       #[inline(always)]
     pub fn fraction_config(&mut self, fraction_config: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
                         self.instruction.fraction_config = Some(fraction_config);
-                    self
-    }
-      #[inline(always)]
-    pub fn participant_balance0(&mut self, participant_balance0: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-                        self.instruction.participant_balance0 = Some(participant_balance0);
-                    self
-    }
-      #[inline(always)]
-    pub fn participant_balance1(&mut self, participant_balance1: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-                        self.instruction.participant_balance1 = Some(participant_balance1);
-                    self
-    }
-      #[inline(always)]
-    pub fn participant_balance2(&mut self, participant_balance2: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-                        self.instruction.participant_balance2 = Some(participant_balance2);
-                    self
-    }
-      #[inline(always)]
-    pub fn participant_balance3(&mut self, participant_balance3: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-                        self.instruction.participant_balance3 = Some(participant_balance3);
-                    self
-    }
-      #[inline(always)]
-    pub fn participant_balance4(&mut self, participant_balance4: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-                        self.instruction.participant_balance4 = Some(participant_balance4);
-                    self
-    }
-      #[inline(always)]
-    pub fn bot_balance(&mut self, bot_balance: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-                        self.instruction.bot_balance = Some(bot_balance);
                     self
     }
       #[inline(always)]
@@ -581,31 +332,6 @@ impl<'a, 'b> InitializeFractionCpiBuilder<'a, 'b> {
                 #[inline(always)]
       pub fn bot_wallet(&mut self, bot_wallet: Pubkey) -> &mut Self {
         self.instruction.bot_wallet = Some(bot_wallet);
-        self
-      }
-                #[inline(always)]
-      pub fn participant_wallet0(&mut self, participant_wallet0: Pubkey) -> &mut Self {
-        self.instruction.participant_wallet0 = Some(participant_wallet0);
-        self
-      }
-                #[inline(always)]
-      pub fn participant_wallet1(&mut self, participant_wallet1: Pubkey) -> &mut Self {
-        self.instruction.participant_wallet1 = Some(participant_wallet1);
-        self
-      }
-                #[inline(always)]
-      pub fn participant_wallet2(&mut self, participant_wallet2: Pubkey) -> &mut Self {
-        self.instruction.participant_wallet2 = Some(participant_wallet2);
-        self
-      }
-                #[inline(always)]
-      pub fn participant_wallet3(&mut self, participant_wallet3: Pubkey) -> &mut Self {
-        self.instruction.participant_wallet3 = Some(participant_wallet3);
-        self
-      }
-                #[inline(always)]
-      pub fn participant_wallet4(&mut self, participant_wallet4: Pubkey) -> &mut Self {
-        self.instruction.participant_wallet4 = Some(participant_wallet4);
         self
       }
         /// Add an additional account to the instruction.
@@ -634,11 +360,6 @@ impl<'a, 'b> InitializeFractionCpiBuilder<'a, 'b> {
                                                               name: self.instruction.name.clone().expect("name is not set"),
                                                                   participants: self.instruction.participants.clone().expect("participants is not set"),
                                                                   bot_wallet: self.instruction.bot_wallet.clone().expect("bot_wallet is not set"),
-                                                                  participant_wallet0: self.instruction.participant_wallet0.clone().expect("participant_wallet0 is not set"),
-                                                                  participant_wallet1: self.instruction.participant_wallet1.clone().expect("participant_wallet1 is not set"),
-                                                                  participant_wallet2: self.instruction.participant_wallet2.clone().expect("participant_wallet2 is not set"),
-                                                                  participant_wallet3: self.instruction.participant_wallet3.clone().expect("participant_wallet3 is not set"),
-                                                                  participant_wallet4: self.instruction.participant_wallet4.clone().expect("participant_wallet4 is not set"),
                                     };
         let instruction = InitializeFractionCpi {
         __program: self.instruction.__program,
@@ -646,18 +367,6 @@ impl<'a, 'b> InitializeFractionCpiBuilder<'a, 'b> {
           authority: self.instruction.authority.expect("authority is not set"),
                   
           fraction_config: self.instruction.fraction_config.expect("fraction_config is not set"),
-                  
-          participant_balance0: self.instruction.participant_balance0.expect("participant_balance0 is not set"),
-                  
-          participant_balance1: self.instruction.participant_balance1.expect("participant_balance1 is not set"),
-                  
-          participant_balance2: self.instruction.participant_balance2.expect("participant_balance2 is not set"),
-                  
-          participant_balance3: self.instruction.participant_balance3.expect("participant_balance3 is not set"),
-                  
-          participant_balance4: self.instruction.participant_balance4.expect("participant_balance4 is not set"),
-                  
-          bot_balance: self.instruction.bot_balance.expect("bot_balance is not set"),
                   
           system_program: self.instruction.system_program.expect("system_program is not set"),
                           __args: args,
@@ -671,21 +380,10 @@ struct InitializeFractionCpiBuilderInstruction<'a, 'b> {
   __program: &'b solana_account_info::AccountInfo<'a>,
             authority: Option<&'b solana_account_info::AccountInfo<'a>>,
                 fraction_config: Option<&'b solana_account_info::AccountInfo<'a>>,
-                participant_balance0: Option<&'b solana_account_info::AccountInfo<'a>>,
-                participant_balance1: Option<&'b solana_account_info::AccountInfo<'a>>,
-                participant_balance2: Option<&'b solana_account_info::AccountInfo<'a>>,
-                participant_balance3: Option<&'b solana_account_info::AccountInfo<'a>>,
-                participant_balance4: Option<&'b solana_account_info::AccountInfo<'a>>,
-                bot_balance: Option<&'b solana_account_info::AccountInfo<'a>>,
                 system_program: Option<&'b solana_account_info::AccountInfo<'a>>,
                         name: Option<String>,
                 participants: Option<[Participant; 5]>,
                 bot_wallet: Option<Pubkey>,
-                participant_wallet0: Option<Pubkey>,
-                participant_wallet1: Option<Pubkey>,
-                participant_wallet2: Option<Pubkey>,
-                participant_wallet3: Option<Pubkey>,
-                participant_wallet4: Option<Pubkey>,
         /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
   __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }

@@ -9,4 +9,3 @@
 export * from './claimAndDistribute';
 export * from './initializeFraction';
 export * from './updateFraction';
-export * from './withdrawShare';

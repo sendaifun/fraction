@@ -15,7 +15,7 @@ import {
 import { getFractionErrorFromCode, getFractionErrorFromName } from '../errors';
 
 export const FRACTION_PROGRAM_ID =
-  'FM9hKTFN98M2uo7zw2huAbx7vJTQpfgFuxr9rVCTt8UY' as PublicKey<'FM9hKTFN98M2uo7zw2huAbx7vJTQpfgFuxr9rVCTt8UY'>;
+  'Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg' as PublicKey<'Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg'>;
 
 export function createFractionProgram(): Program {
   return {

@@ -93,7 +93,7 @@ export function updateFraction(
   // Program ID.
   const programId = context.programs.getPublicKey(
     'fraction',
-    'FM9hKTFN98M2uo7zw2huAbx7vJTQpfgFuxr9rVCTt8UY'
+    'Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg'
   );
 
   // Accounts.

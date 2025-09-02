@@ -9,5 +9,5 @@ use solana_pubkey::{pubkey, Pubkey};
 
 
   /// `fraction` program ID.
-  pub const FRACTION_ID: Pubkey = pubkey!("FM9hKTFN98M2uo7zw2huAbx7vJTQpfgFuxr9rVCTt8UY");
+  pub const FRACTION_ID: Pubkey = pubkey!("Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg");
 

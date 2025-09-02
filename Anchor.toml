@@ -6,7 +6,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-fraction = "FM9hKTFN98M2uo7zw2huAbx7vJTQpfgFuxr9rVCTt8UY"
+fraction = "Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg"
 
 [programs.devnet]
 fraction = "AXTUsPAQnRh2n1ZJDzNsbZgQDFhavFivMRtLHiMftVaB"

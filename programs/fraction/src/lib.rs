@@ -9,7 +9,7 @@ pub use states::*;
 pub mod errors;
 pub use errors::*;
 
-declare_id!("FM9hKTFN98M2uo7zw2huAbx7vJTQpfgFuxr9rVCTt8UY");
+declare_id!("Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg");
 
 #[program]
 pub mod fraction {
@@ -20,21 +20,11 @@ pub mod fraction {
         name: String,
         participants: [Participant; 5],
         bot_wallet: Pubkey,
-        participant_wallet_0: Pubkey,
-        participant_wallet_1: Pubkey,
-        participant_wallet_2: Pubkey,
-        participant_wallet_3: Pubkey,
-        participant_wallet_4: Pubkey,
     ) -> Result<()> {
         ctx.accounts.initialize_fraction(
             name,
             participants,
             bot_wallet,
-            participant_wallet_0,
-            participant_wallet_1,
-            participant_wallet_2,
-            participant_wallet_3,
-            participant_wallet_4,
             &ctx.bumps,
         )
     }
@@ -50,9 +40,5 @@ pub mod fraction {
 
     pub fn claim_and_distribute(ctx: Context<ClaimAndDistribute>, _name: String) -> Result<()> {
         ctx.accounts.claim_and_distribute()
-    }
-
-    pub fn withdraw_share(ctx: Context<WithdrawShare>, _name: String) -> Result<()> {
-        ctx.accounts.withdraw_share()
     }
 }

@@ -7,4 +7,3 @@
  */
 
 export * from './fractionConfig';
-export * from './participantBalance';

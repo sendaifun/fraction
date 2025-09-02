@@ -27,21 +27,18 @@ pub struct ClaimAndDistribute<'info> {
     pub treasury_mint: InterfaceAccount<'info, Mint>,
 
     #[account(mut, constraint = bot_token_account.mint == treasury_mint.key())]
-    pub bot_token_account: InterfaceAccount<'info, TokenAccount>,
+    pub bot_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    #[account(mut, seeds = [b"balance", fraction_config.key().as_ref(), fraction_config.participants[0].wallet.as_ref()], bump = participant_balance_0.bump)]
-    pub participant_balance_0: Box<Account<'info, ParticipantBalance>>,
-    #[account(mut, seeds = [b"balance", fraction_config.key().as_ref(), fraction_config.participants[1].wallet.as_ref()], bump = participant_balance_1.bump)]
-    pub participant_balance_1: Box<Account<'info, ParticipantBalance>>,
-    #[account(mut, seeds = [b"balance", fraction_config.key().as_ref(), fraction_config.participants[2].wallet.as_ref()], bump = participant_balance_2.bump)]
-    pub participant_balance_2: Box<Account<'info, ParticipantBalance>>,
-    #[account(mut, seeds = [b"balance", fraction_config.key().as_ref(), fraction_config.participants[3].wallet.as_ref()], bump = participant_balance_3.bump)]
-    pub participant_balance_3: Box<Account<'info, ParticipantBalance>>,
-    #[account(mut, seeds = [b"balance", fraction_config.key().as_ref(), fraction_config.participants[4].wallet.as_ref()], bump = participant_balance_4.bump)]
-    pub participant_balance_4: Box<Account<'info, ParticipantBalance>>,
-
-    #[account(mut, seeds = [b"bot_balance", fraction_config.key().as_ref(), bot.key().as_ref()], bump = bot_balance.bump)]
-    pub bot_balance: Box<Account<'info, ParticipantBalance>>,
+    #[account(mut, constraint = participant_token_account_0.mint == treasury_mint.key())]
+    pub participant_token_account_0: Box<InterfaceAccount<'info, TokenAccount>>,
+    #[account(mut, constraint = participant_token_account_1.mint == treasury_mint.key())]
+    pub participant_token_account_1: Box<InterfaceAccount<'info, TokenAccount>>,
+    #[account(mut, constraint = participant_token_account_2.mint == treasury_mint.key())]
+    pub participant_token_account_2: Box<InterfaceAccount<'info, TokenAccount>>,
+    #[account(mut, constraint = participant_token_account_3.mint == treasury_mint.key())]
+    pub participant_token_account_3: Box<InterfaceAccount<'info, TokenAccount>>,
+    #[account(mut, constraint = participant_token_account_4.mint == treasury_mint.key())]
+    pub participant_token_account_4: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub token_program: Interface<'info, TokenInterface>,
 }
@@ -83,32 +80,40 @@ impl<'info> ClaimAndDistribute<'info> {
                 bot_amount,
                 self.treasury_mint.decimals,
             )?;
-            self.bot_balance.amount = self
-                .bot_balance
-                .amount
-                .checked_add(bot_amount)
-                .ok_or(FractionError::ArithmeticOverflow)?;
         }
 
-        let participant_balances = [
-            &mut self.participant_balance_0,
-            &mut self.participant_balance_1,
-            &mut self.participant_balance_2,
-            &mut self.participant_balance_3,
-            &mut self.participant_balance_4,
+        let participant_token_accounts = [
+            &self.participant_token_account_0,
+            &self.participant_token_account_1,
+            &self.participant_token_account_2,
+            &self.participant_token_account_3,
+            &self.participant_token_account_4,
         ];
 
-        for (i, participant_balance) in participant_balances.into_iter().enumerate() {
+        for (i, participant_token_account) in participant_token_accounts.into_iter().enumerate() {
             let share_bps = self.fraction_config.participants[i].share_bps as u64;
             if share_bps > 0 {
                 let participant_share = participant_total
                     .checked_mul(share_bps)
                     .and_then(|x| x.checked_div(10_000))
                     .ok_or(FractionError::ArithmeticOverflow)?;
-                participant_balance.amount = participant_balance
-                    .amount
-                    .checked_add(participant_share)
-                    .ok_or(FractionError::ArithmeticOverflow)?;
+                    
+                if participant_share > 0 {
+                    transfer_checked(
+                        CpiContext::new_with_signer(
+                            self.token_program.to_account_info(),
+                            TransferChecked {
+                                from: self.treasury.to_account_info(),
+                                mint: self.treasury_mint.to_account_info(),
+                                to: participant_token_account.to_account_info(),
+                                authority: self.fraction_config.to_account_info(),
+                            },
+                            signer,
+                        ),
+                        participant_share,
+                        self.treasury_mint.decimals,
+                    )?;
+                }
             }
         }
         Ok(())

@@ -17,15 +17,13 @@ import {
   type ParsedClaimAndDistributeInstruction,
   type ParsedInitializeFractionInstruction,
   type ParsedUpdateFractionInstruction,
-  type ParsedWithdrawShareInstruction,
 } from '../instructions';
 
 export const FRACTION_PROGRAM_ADDRESS =
-  'FM9hKTFN98M2uo7zw2huAbx7vJTQpfgFuxr9rVCTt8UY' as Address<'FM9hKTFN98M2uo7zw2huAbx7vJTQpfgFuxr9rVCTt8UY'>;
+  'Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg' as Address<'Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg'>;
 
 export enum FractionAccount {
   FractionConfig,
-  ParticipantBalance,
 }
 
 export function identifyFractionAccount(
@@ -43,17 +41,6 @@ export function identifyFractionAccount(
   ) {
     return FractionAccount.FractionConfig;
   }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([142, 219, 111, 115, 231, 38, 160, 173])
-      ),
-      0
-    )
-  ) {
-    return FractionAccount.ParticipantBalance;
-  }
   throw new Error(
     'The provided account could not be identified as a fraction account.'
   );
@@ -63,7 +50,6 @@ export enum FractionInstruction {
   ClaimAndDistribute,
   InitializeFraction,
   UpdateFraction,
-  WithdrawShare,
 }
 
 export function identifyFractionInstruction(
@@ -103,24 +89,13 @@ export function identifyFractionInstruction(
   ) {
     return FractionInstruction.UpdateFraction;
   }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([169, 159, 52, 79, 59, 190, 159, 9])
-      ),
-      0
-    )
-  ) {
-    return FractionInstruction.WithdrawShare;
-  }
   throw new Error(
     'The provided instruction could not be identified as a fraction instruction.'
   );
 }
 
 export type ParsedFractionInstruction<
-  TProgram extends string = 'FM9hKTFN98M2uo7zw2huAbx7vJTQpfgFuxr9rVCTt8UY',
+  TProgram extends string = 'Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg',
 > =
   | ({
       instructionType: FractionInstruction.ClaimAndDistribute;
@@ -130,7 +105,4 @@ export type ParsedFractionInstruction<
     } & ParsedInitializeFractionInstruction<TProgram>)
   | ({
       instructionType: FractionInstruction.UpdateFraction;
-    } & ParsedUpdateFractionInstruction<TProgram>)
-  | ({
-      instructionType: FractionInstruction.WithdrawShare;
-    } & ParsedWithdrawShareInstruction<TProgram>);
+    } & ParsedUpdateFractionInstruction<TProgram>);
