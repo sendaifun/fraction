@@ -5,9 +5,9 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
+  pub(crate) mod r#fraction_config;
   pub(crate) mod r#participant_balance;
-  pub(crate) mod r#splitter_config;
 
+  pub use self::r#fraction_config::*;
   pub use self::r#participant_balance::*;
-  pub use self::r#splitter_config::*;
 

@@ -1,5 +1,5 @@
 /**
- * Example usage of the generated JavaScript client for the Splits program
+ * Example usage of the generated JavaScript client for the Fraction program
  * This example demonstrates how to send actual transactions to a local validator
  */
 
@@ -184,7 +184,7 @@ import {
   type ParticipantArgs,
   
   // Program address
-  SPLITS_PROGRAM_ADDRESS,
+  FRACTION_PROGRAM_ADDRESS,
 } from './generated/js/src';
 
 // Configuration
@@ -354,20 +354,20 @@ async function initializeSplitterExample() {
     // Calculate PDAs manually like the test does
     const [splitterConfigPda] = PublicKey.findProgramAddressSync(
       [Buffer.from("splitter_config"), new PublicKey(authority.address).toBuffer(), Buffer.from(splitterName)],
-      new PublicKey(SPLITS_PROGRAM_ADDRESS)
+      new PublicKey(FRACTION_PROGRAM_ADDRESS)
     );
     
     const participantBalancePdas = participants.map(p => {
       const [pda] = PublicKey.findProgramAddressSync(
         [Buffer.from("balance"), splitterConfigPda.toBuffer(), new PublicKey(p.wallet).toBuffer()],
-        new PublicKey(SPLITS_PROGRAM_ADDRESS)
+        new PublicKey(FRACTION_PROGRAM_ADDRESS)
       );
       return pda;
     });
     
     const [botBalancePda] = PublicKey.findProgramAddressSync(
       [Buffer.from("bot_balance"), splitterConfigPda.toBuffer(), new PublicKey(botWallet).toBuffer()],
-      new PublicKey(SPLITS_PROGRAM_ADDRESS)
+      new PublicKey(FRACTION_PROGRAM_ADDRESS)
     );
     
     // Create the initialize splitter instruction using the synchronous version
@@ -570,7 +570,7 @@ async function completeClaimAndDistributeExample(
     const participantBalancePdas = tokenSetup.participants.map(p => {
       const [pda] = PublicKey.findProgramAddressSync(
         [Buffer.from("balance"), new PublicKey(splitterConfigAddress).toBuffer(), new PublicKey(p).toBuffer()],
-        new PublicKey(SPLITS_PROGRAM_ADDRESS)
+        new PublicKey(FRACTION_PROGRAM_ADDRESS)
       );
       return pda.toBase58() as Address;
     });
@@ -655,7 +655,7 @@ async function completeWithdrawShareExample(
       // Calculate the participant balance PDA
       const [participantBalancePda] = PublicKey.findProgramAddressSync(
         [Buffer.from("balance"), new PublicKey(splitterConfigAddress).toBuffer(), new PublicKey(participantWallet).toBuffer()],
-        new PublicKey(SPLITS_PROGRAM_ADDRESS)
+        new PublicKey(FRACTION_PROGRAM_ADDRESS)
       );
       
       console.log(`Creating withdraw instruction for participant ${participantWallet}...`);
@@ -737,7 +737,7 @@ async function completeWithdrawShareExample(
  * Main example function that runs all examples
  */
 async function runAllExamples() {
-  console.log('Splits Program JavaScript Client Examples');
+  console.log('Fraction Program JavaScript Client Examples');
   console.log('=============================================\n');
   
   try {
@@ -802,7 +802,7 @@ async function runAllExamples() {
     console.error('\n❌ Example execution failed:', error);
     console.error('\nTroubleshooting:');
     console.error('1. Make sure the local validator is running on http://127.0.0.1:8899');
-    console.error('2. Make sure the Splits program is deployed to the local validator');
+    console.error('2. Make sure the Fraction program is deployed to the local validator');
     console.error('3. Check that all required accounts are properly funded');
     console.error('4. Verify the program ID matches the deployed program');
     process.exit(1);

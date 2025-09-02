@@ -5,32 +5,22 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
+use crate::generated::types::Participant;
+use solana_pubkey::Pubkey;
 use borsh::BorshSerialize;
 use borsh::BorshDeserialize;
 
-pub const CLAIM_AND_DISTRIBUTE_DISCRIMINATOR: [u8; 8] = [111, 147, 210, 144, 253, 16, 187, 238];
+pub const INITIALIZE_FRACTION_DISCRIMINATOR: [u8; 8] = [159, 21, 140, 42, 52, 59, 103, 82];
 
 /// Accounts.
 #[derive(Debug)]
-pub struct ClaimAndDistribute {
+pub struct InitializeFraction {
       
-              
-          pub bot: solana_pubkey::Pubkey,
-          
               
           pub authority: solana_pubkey::Pubkey,
           
               
           pub fraction_config: solana_pubkey::Pubkey,
-          
-              
-          pub treasury: solana_pubkey::Pubkey,
-          
-              
-          pub treasury_mint: solana_pubkey::Pubkey,
-          
-              
-          pub bot_token_account: solana_pubkey::Pubkey,
           
               
           pub participant_balance0: solana_pubkey::Pubkey,
@@ -51,39 +41,23 @@ pub struct ClaimAndDistribute {
           pub bot_balance: solana_pubkey::Pubkey,
           
               
-          pub token_program: solana_pubkey::Pubkey,
+          pub system_program: solana_pubkey::Pubkey,
       }
 
-impl ClaimAndDistribute {
-  pub fn instruction(&self, args: ClaimAndDistributeInstructionArgs) -> solana_instruction::Instruction {
+impl InitializeFraction {
+  pub fn instruction(&self, args: InitializeFractionInstructionArgs) -> solana_instruction::Instruction {
     self.instruction_with_remaining_accounts(args, &[])
   }
   #[allow(clippy::arithmetic_side_effects)]
   #[allow(clippy::vec_init_then_push)]
-  pub fn instruction_with_remaining_accounts(&self, args: ClaimAndDistributeInstructionArgs, remaining_accounts: &[solana_instruction::AccountMeta]) -> solana_instruction::Instruction {
-    let mut accounts = Vec::with_capacity(13+ remaining_accounts.len());
-                            accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.bot,
-            true
-          ));
-                                          accounts.push(solana_instruction::AccountMeta::new_readonly(
+  pub fn instruction_with_remaining_accounts(&self, args: InitializeFractionInstructionArgs, remaining_accounts: &[solana_instruction::AccountMeta]) -> solana_instruction::Instruction {
+    let mut accounts = Vec::with_capacity(9+ remaining_accounts.len());
+                            accounts.push(solana_instruction::AccountMeta::new(
             self.authority,
-            false
+            true
           ));
                                           accounts.push(solana_instruction::AccountMeta::new(
             self.fraction_config,
-            false
-          ));
-                                          accounts.push(solana_instruction::AccountMeta::new(
-            self.treasury,
-            false
-          ));
-                                          accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.treasury_mint,
-            false
-          ));
-                                          accounts.push(solana_instruction::AccountMeta::new(
-            self.bot_token_account,
             false
           ));
                                           accounts.push(solana_instruction::AccountMeta::new(
@@ -111,11 +85,11 @@ impl ClaimAndDistribute {
             false
           ));
                                           accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.token_program,
+            self.system_program,
             false
           ));
                       accounts.extend_from_slice(remaining_accounts);
-    let mut data = borsh::to_vec(&ClaimAndDistributeInstructionData::new()).unwrap();
+    let mut data = borsh::to_vec(&InitializeFractionInstructionData::new()).unwrap();
           let mut args = borsh::to_vec(&args).unwrap();
       data.append(&mut args);
     
@@ -129,19 +103,19 @@ impl ClaimAndDistribute {
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
- pub struct ClaimAndDistributeInstructionData {
+ pub struct InitializeFractionInstructionData {
             discriminator: [u8; 8],
-            }
+                                                      }
 
-impl ClaimAndDistributeInstructionData {
+impl InitializeFractionInstructionData {
   pub fn new() -> Self {
     Self {
-                        discriminator: [111, 147, 210, 144, 253, 16, 187, 238],
-                                }
+                        discriminator: [159, 21, 140, 42, 52, 59, 103, 82],
+                                                                                                                                  }
   }
 }
 
-impl Default for ClaimAndDistributeInstructionData {
+impl Default for InitializeFractionInstructionData {
   fn default() -> Self {
     Self::new()
   }
@@ -149,56 +123,57 @@ impl Default for ClaimAndDistributeInstructionData {
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
- pub struct ClaimAndDistributeInstructionArgs {
+ pub struct InitializeFractionInstructionArgs {
                   pub name: String,
+                pub participants: [Participant; 5],
+                pub bot_wallet: Pubkey,
+                pub participant_wallet0: Pubkey,
+                pub participant_wallet1: Pubkey,
+                pub participant_wallet2: Pubkey,
+                pub participant_wallet3: Pubkey,
+                pub participant_wallet4: Pubkey,
       }
 
 
-/// Instruction builder for `ClaimAndDistribute`.
+/// Instruction builder for `InitializeFraction`.
 ///
 /// ### Accounts:
 ///
-                ///   0. `[signer]` bot
-          ///   1. `[]` authority
-                ///   2. `[writable]` fraction_config
-                ///   3. `[writable]` treasury
-          ///   4. `[]` treasury_mint
-                ///   5. `[writable]` bot_token_account
-                ///   6. `[writable]` participant_balance0
-                ///   7. `[writable]` participant_balance1
-                ///   8. `[writable]` participant_balance2
-                ///   9. `[writable]` participant_balance3
-                ///   10. `[writable]` participant_balance4
-                ///   11. `[writable]` bot_balance
-          ///   12. `[]` token_program
+                      ///   0. `[writable, signer]` authority
+                ///   1. `[writable]` fraction_config
+                ///   2. `[writable]` participant_balance0
+                ///   3. `[writable]` participant_balance1
+                ///   4. `[writable]` participant_balance2
+                ///   5. `[writable]` participant_balance3
+                ///   6. `[writable]` participant_balance4
+                ///   7. `[writable]` bot_balance
+                ///   8. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
-pub struct ClaimAndDistributeBuilder {
-            bot: Option<solana_pubkey::Pubkey>,
-                authority: Option<solana_pubkey::Pubkey>,
+pub struct InitializeFractionBuilder {
+            authority: Option<solana_pubkey::Pubkey>,
                 fraction_config: Option<solana_pubkey::Pubkey>,
-                treasury: Option<solana_pubkey::Pubkey>,
-                treasury_mint: Option<solana_pubkey::Pubkey>,
-                bot_token_account: Option<solana_pubkey::Pubkey>,
                 participant_balance0: Option<solana_pubkey::Pubkey>,
                 participant_balance1: Option<solana_pubkey::Pubkey>,
                 participant_balance2: Option<solana_pubkey::Pubkey>,
                 participant_balance3: Option<solana_pubkey::Pubkey>,
                 participant_balance4: Option<solana_pubkey::Pubkey>,
                 bot_balance: Option<solana_pubkey::Pubkey>,
-                token_program: Option<solana_pubkey::Pubkey>,
+                system_program: Option<solana_pubkey::Pubkey>,
                         name: Option<String>,
+                participants: Option<[Participant; 5]>,
+                bot_wallet: Option<Pubkey>,
+                participant_wallet0: Option<Pubkey>,
+                participant_wallet1: Option<Pubkey>,
+                participant_wallet2: Option<Pubkey>,
+                participant_wallet3: Option<Pubkey>,
+                participant_wallet4: Option<Pubkey>,
         __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
-impl ClaimAndDistributeBuilder {
+impl InitializeFractionBuilder {
   pub fn new() -> Self {
     Self::default()
   }
-            #[inline(always)]
-    pub fn bot(&mut self, bot: solana_pubkey::Pubkey) -> &mut Self {
-                        self.bot = Some(bot);
-                    self
-    }
             #[inline(always)]
     pub fn authority(&mut self, authority: solana_pubkey::Pubkey) -> &mut Self {
                         self.authority = Some(authority);
@@ -207,21 +182,6 @@ impl ClaimAndDistributeBuilder {
             #[inline(always)]
     pub fn fraction_config(&mut self, fraction_config: solana_pubkey::Pubkey) -> &mut Self {
                         self.fraction_config = Some(fraction_config);
-                    self
-    }
-            #[inline(always)]
-    pub fn treasury(&mut self, treasury: solana_pubkey::Pubkey) -> &mut Self {
-                        self.treasury = Some(treasury);
-                    self
-    }
-            #[inline(always)]
-    pub fn treasury_mint(&mut self, treasury_mint: solana_pubkey::Pubkey) -> &mut Self {
-                        self.treasury_mint = Some(treasury_mint);
-                    self
-    }
-            #[inline(always)]
-    pub fn bot_token_account(&mut self, bot_token_account: solana_pubkey::Pubkey) -> &mut Self {
-                        self.bot_token_account = Some(bot_token_account);
                     self
     }
             #[inline(always)]
@@ -254,14 +214,50 @@ impl ClaimAndDistributeBuilder {
                         self.bot_balance = Some(bot_balance);
                     self
     }
-            #[inline(always)]
-    pub fn token_program(&mut self, token_program: solana_pubkey::Pubkey) -> &mut Self {
-                        self.token_program = Some(token_program);
+            /// `[optional account, default to '11111111111111111111111111111111']`
+#[inline(always)]
+    pub fn system_program(&mut self, system_program: solana_pubkey::Pubkey) -> &mut Self {
+                        self.system_program = Some(system_program);
                     self
     }
                     #[inline(always)]
       pub fn name(&mut self, name: String) -> &mut Self {
         self.name = Some(name);
+        self
+      }
+                #[inline(always)]
+      pub fn participants(&mut self, participants: [Participant; 5]) -> &mut Self {
+        self.participants = Some(participants);
+        self
+      }
+                #[inline(always)]
+      pub fn bot_wallet(&mut self, bot_wallet: Pubkey) -> &mut Self {
+        self.bot_wallet = Some(bot_wallet);
+        self
+      }
+                #[inline(always)]
+      pub fn participant_wallet0(&mut self, participant_wallet0: Pubkey) -> &mut Self {
+        self.participant_wallet0 = Some(participant_wallet0);
+        self
+      }
+                #[inline(always)]
+      pub fn participant_wallet1(&mut self, participant_wallet1: Pubkey) -> &mut Self {
+        self.participant_wallet1 = Some(participant_wallet1);
+        self
+      }
+                #[inline(always)]
+      pub fn participant_wallet2(&mut self, participant_wallet2: Pubkey) -> &mut Self {
+        self.participant_wallet2 = Some(participant_wallet2);
+        self
+      }
+                #[inline(always)]
+      pub fn participant_wallet3(&mut self, participant_wallet3: Pubkey) -> &mut Self {
+        self.participant_wallet3 = Some(participant_wallet3);
+        self
+      }
+                #[inline(always)]
+      pub fn participant_wallet4(&mut self, participant_wallet4: Pubkey) -> &mut Self {
+        self.participant_wallet4 = Some(participant_wallet4);
         self
       }
         /// Add an additional account to the instruction.
@@ -278,49 +274,40 @@ impl ClaimAndDistributeBuilder {
   }
   #[allow(clippy::clone_on_copy)]
   pub fn instruction(&self) -> solana_instruction::Instruction {
-    let accounts = ClaimAndDistribute {
-                              bot: self.bot.expect("bot is not set"),
-                                        authority: self.authority.expect("authority is not set"),
+    let accounts = InitializeFraction {
+                              authority: self.authority.expect("authority is not set"),
                                         fraction_config: self.fraction_config.expect("fraction_config is not set"),
-                                        treasury: self.treasury.expect("treasury is not set"),
-                                        treasury_mint: self.treasury_mint.expect("treasury_mint is not set"),
-                                        bot_token_account: self.bot_token_account.expect("bot_token_account is not set"),
                                         participant_balance0: self.participant_balance0.expect("participant_balance0 is not set"),
                                         participant_balance1: self.participant_balance1.expect("participant_balance1 is not set"),
                                         participant_balance2: self.participant_balance2.expect("participant_balance2 is not set"),
                                         participant_balance3: self.participant_balance3.expect("participant_balance3 is not set"),
                                         participant_balance4: self.participant_balance4.expect("participant_balance4 is not set"),
                                         bot_balance: self.bot_balance.expect("bot_balance is not set"),
-                                        token_program: self.token_program.expect("token_program is not set"),
+                                        system_program: self.system_program.unwrap_or(solana_pubkey::pubkey!("11111111111111111111111111111111")),
                       };
-          let args = ClaimAndDistributeInstructionArgs {
+          let args = InitializeFractionInstructionArgs {
                                                               name: self.name.clone().expect("name is not set"),
+                                                                  participants: self.participants.clone().expect("participants is not set"),
+                                                                  bot_wallet: self.bot_wallet.clone().expect("bot_wallet is not set"),
+                                                                  participant_wallet0: self.participant_wallet0.clone().expect("participant_wallet0 is not set"),
+                                                                  participant_wallet1: self.participant_wallet1.clone().expect("participant_wallet1 is not set"),
+                                                                  participant_wallet2: self.participant_wallet2.clone().expect("participant_wallet2 is not set"),
+                                                                  participant_wallet3: self.participant_wallet3.clone().expect("participant_wallet3 is not set"),
+                                                                  participant_wallet4: self.participant_wallet4.clone().expect("participant_wallet4 is not set"),
                                     };
     
     accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
   }
 }
 
-  /// `claim_and_distribute` CPI accounts.
-  pub struct ClaimAndDistributeCpiAccounts<'a, 'b> {
+  /// `initialize_fraction` CPI accounts.
+  pub struct InitializeFractionCpiAccounts<'a, 'b> {
           
-                    
-              pub bot: &'b solana_account_info::AccountInfo<'a>,
-                
                     
               pub authority: &'b solana_account_info::AccountInfo<'a>,
                 
                     
               pub fraction_config: &'b solana_account_info::AccountInfo<'a>,
-                
-                    
-              pub treasury: &'b solana_account_info::AccountInfo<'a>,
-                
-                    
-              pub treasury_mint: &'b solana_account_info::AccountInfo<'a>,
-                
-                    
-              pub bot_token_account: &'b solana_account_info::AccountInfo<'a>,
                 
                     
               pub participant_balance0: &'b solana_account_info::AccountInfo<'a>,
@@ -341,31 +328,19 @@ impl ClaimAndDistributeBuilder {
               pub bot_balance: &'b solana_account_info::AccountInfo<'a>,
                 
                     
-              pub token_program: &'b solana_account_info::AccountInfo<'a>,
+              pub system_program: &'b solana_account_info::AccountInfo<'a>,
             }
 
-/// `claim_and_distribute` CPI instruction.
-pub struct ClaimAndDistributeCpi<'a, 'b> {
+/// `initialize_fraction` CPI instruction.
+pub struct InitializeFractionCpi<'a, 'b> {
   /// The program to invoke.
   pub __program: &'b solana_account_info::AccountInfo<'a>,
       
-              
-          pub bot: &'b solana_account_info::AccountInfo<'a>,
-          
               
           pub authority: &'b solana_account_info::AccountInfo<'a>,
           
               
           pub fraction_config: &'b solana_account_info::AccountInfo<'a>,
-          
-              
-          pub treasury: &'b solana_account_info::AccountInfo<'a>,
-          
-              
-          pub treasury_mint: &'b solana_account_info::AccountInfo<'a>,
-          
-              
-          pub bot_token_account: &'b solana_account_info::AccountInfo<'a>,
           
               
           pub participant_balance0: &'b solana_account_info::AccountInfo<'a>,
@@ -386,32 +361,28 @@ pub struct ClaimAndDistributeCpi<'a, 'b> {
           pub bot_balance: &'b solana_account_info::AccountInfo<'a>,
           
               
-          pub token_program: &'b solana_account_info::AccountInfo<'a>,
+          pub system_program: &'b solana_account_info::AccountInfo<'a>,
             /// The arguments for the instruction.
-    pub __args: ClaimAndDistributeInstructionArgs,
+    pub __args: InitializeFractionInstructionArgs,
   }
 
-impl<'a, 'b> ClaimAndDistributeCpi<'a, 'b> {
+impl<'a, 'b> InitializeFractionCpi<'a, 'b> {
   pub fn new(
     program: &'b solana_account_info::AccountInfo<'a>,
-          accounts: ClaimAndDistributeCpiAccounts<'a, 'b>,
-              args: ClaimAndDistributeInstructionArgs,
+          accounts: InitializeFractionCpiAccounts<'a, 'b>,
+              args: InitializeFractionInstructionArgs,
       ) -> Self {
     Self {
       __program: program,
-              bot: accounts.bot,
               authority: accounts.authority,
               fraction_config: accounts.fraction_config,
-              treasury: accounts.treasury,
-              treasury_mint: accounts.treasury_mint,
-              bot_token_account: accounts.bot_token_account,
               participant_balance0: accounts.participant_balance0,
               participant_balance1: accounts.participant_balance1,
               participant_balance2: accounts.participant_balance2,
               participant_balance3: accounts.participant_balance3,
               participant_balance4: accounts.participant_balance4,
               bot_balance: accounts.bot_balance,
-              token_program: accounts.token_program,
+              system_program: accounts.system_program,
                     __args: args,
           }
   }
@@ -435,29 +406,13 @@ impl<'a, 'b> ClaimAndDistributeCpi<'a, 'b> {
     signers_seeds: &[&[&[u8]]],
     remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)]
   ) -> solana_program_error::ProgramResult {
-    let mut accounts = Vec::with_capacity(13+ remaining_accounts.len());
-                            accounts.push(solana_instruction::AccountMeta::new_readonly(
-            *self.bot.key,
-            true
-          ));
-                                          accounts.push(solana_instruction::AccountMeta::new_readonly(
+    let mut accounts = Vec::with_capacity(9+ remaining_accounts.len());
+                            accounts.push(solana_instruction::AccountMeta::new(
             *self.authority.key,
-            false
+            true
           ));
                                           accounts.push(solana_instruction::AccountMeta::new(
             *self.fraction_config.key,
-            false
-          ));
-                                          accounts.push(solana_instruction::AccountMeta::new(
-            *self.treasury.key,
-            false
-          ));
-                                          accounts.push(solana_instruction::AccountMeta::new_readonly(
-            *self.treasury_mint.key,
-            false
-          ));
-                                          accounts.push(solana_instruction::AccountMeta::new(
-            *self.bot_token_account.key,
             false
           ));
                                           accounts.push(solana_instruction::AccountMeta::new(
@@ -485,7 +440,7 @@ impl<'a, 'b> ClaimAndDistributeCpi<'a, 'b> {
             false
           ));
                                           accounts.push(solana_instruction::AccountMeta::new_readonly(
-            *self.token_program.key,
+            *self.system_program.key,
             false
           ));
                       remaining_accounts.iter().for_each(|remaining_account| {
@@ -495,7 +450,7 @@ impl<'a, 'b> ClaimAndDistributeCpi<'a, 'b> {
           is_writable: remaining_account.2,
       })
     });
-    let mut data = borsh::to_vec(&ClaimAndDistributeInstructionData::new()).unwrap();
+    let mut data = borsh::to_vec(&InitializeFractionInstructionData::new()).unwrap();
           let mut args = borsh::to_vec(&self.__args).unwrap();
       data.append(&mut args);
     
@@ -504,21 +459,17 @@ impl<'a, 'b> ClaimAndDistributeCpi<'a, 'b> {
       accounts,
       data,
     };
-    let mut account_infos = Vec::with_capacity(14 + remaining_accounts.len());
+    let mut account_infos = Vec::with_capacity(10 + remaining_accounts.len());
     account_infos.push(self.__program.clone());
-                  account_infos.push(self.bot.clone());
-                        account_infos.push(self.authority.clone());
+                  account_infos.push(self.authority.clone());
                         account_infos.push(self.fraction_config.clone());
-                        account_infos.push(self.treasury.clone());
-                        account_infos.push(self.treasury_mint.clone());
-                        account_infos.push(self.bot_token_account.clone());
                         account_infos.push(self.participant_balance0.clone());
                         account_infos.push(self.participant_balance1.clone());
                         account_infos.push(self.participant_balance2.clone());
                         account_infos.push(self.participant_balance3.clone());
                         account_infos.push(self.participant_balance4.clone());
                         account_infos.push(self.bot_balance.clone());
-                        account_infos.push(self.token_program.clone());
+                        account_infos.push(self.system_program.clone());
               remaining_accounts.iter().for_each(|remaining_account| account_infos.push(remaining_account.0.clone()));
 
     if signers_seeds.is_empty() {
@@ -529,55 +480,49 @@ impl<'a, 'b> ClaimAndDistributeCpi<'a, 'b> {
   }
 }
 
-/// Instruction builder for `ClaimAndDistribute` via CPI.
+/// Instruction builder for `InitializeFraction` via CPI.
 ///
 /// ### Accounts:
 ///
-                ///   0. `[signer]` bot
-          ///   1. `[]` authority
-                ///   2. `[writable]` fraction_config
-                ///   3. `[writable]` treasury
-          ///   4. `[]` treasury_mint
-                ///   5. `[writable]` bot_token_account
-                ///   6. `[writable]` participant_balance0
-                ///   7. `[writable]` participant_balance1
-                ///   8. `[writable]` participant_balance2
-                ///   9. `[writable]` participant_balance3
-                ///   10. `[writable]` participant_balance4
-                ///   11. `[writable]` bot_balance
-          ///   12. `[]` token_program
+                      ///   0. `[writable, signer]` authority
+                ///   1. `[writable]` fraction_config
+                ///   2. `[writable]` participant_balance0
+                ///   3. `[writable]` participant_balance1
+                ///   4. `[writable]` participant_balance2
+                ///   5. `[writable]` participant_balance3
+                ///   6. `[writable]` participant_balance4
+                ///   7. `[writable]` bot_balance
+          ///   8. `[]` system_program
 #[derive(Clone, Debug)]
-pub struct ClaimAndDistributeCpiBuilder<'a, 'b> {
-  instruction: Box<ClaimAndDistributeCpiBuilderInstruction<'a, 'b>>,
+pub struct InitializeFractionCpiBuilder<'a, 'b> {
+  instruction: Box<InitializeFractionCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> ClaimAndDistributeCpiBuilder<'a, 'b> {
+impl<'a, 'b> InitializeFractionCpiBuilder<'a, 'b> {
   pub fn new(program: &'b solana_account_info::AccountInfo<'a>) -> Self {
-    let instruction = Box::new(ClaimAndDistributeCpiBuilderInstruction {
+    let instruction = Box::new(InitializeFractionCpiBuilderInstruction {
       __program: program,
-              bot: None,
               authority: None,
               fraction_config: None,
-              treasury: None,
-              treasury_mint: None,
-              bot_token_account: None,
               participant_balance0: None,
               participant_balance1: None,
               participant_balance2: None,
               participant_balance3: None,
               participant_balance4: None,
               bot_balance: None,
-              token_program: None,
+              system_program: None,
                                             name: None,
+                                participants: None,
+                                bot_wallet: None,
+                                participant_wallet0: None,
+                                participant_wallet1: None,
+                                participant_wallet2: None,
+                                participant_wallet3: None,
+                                participant_wallet4: None,
                     __remaining_accounts: Vec::new(),
     });
     Self { instruction }
   }
-      #[inline(always)]
-    pub fn bot(&mut self, bot: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-                        self.instruction.bot = Some(bot);
-                    self
-    }
       #[inline(always)]
     pub fn authority(&mut self, authority: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
                         self.instruction.authority = Some(authority);
@@ -586,21 +531,6 @@ impl<'a, 'b> ClaimAndDistributeCpiBuilder<'a, 'b> {
       #[inline(always)]
     pub fn fraction_config(&mut self, fraction_config: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
                         self.instruction.fraction_config = Some(fraction_config);
-                    self
-    }
-      #[inline(always)]
-    pub fn treasury(&mut self, treasury: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-                        self.instruction.treasury = Some(treasury);
-                    self
-    }
-      #[inline(always)]
-    pub fn treasury_mint(&mut self, treasury_mint: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-                        self.instruction.treasury_mint = Some(treasury_mint);
-                    self
-    }
-      #[inline(always)]
-    pub fn bot_token_account(&mut self, bot_token_account: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-                        self.instruction.bot_token_account = Some(bot_token_account);
                     self
     }
       #[inline(always)]
@@ -634,13 +564,48 @@ impl<'a, 'b> ClaimAndDistributeCpiBuilder<'a, 'b> {
                     self
     }
       #[inline(always)]
-    pub fn token_program(&mut self, token_program: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-                        self.instruction.token_program = Some(token_program);
+    pub fn system_program(&mut self, system_program: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
+                        self.instruction.system_program = Some(system_program);
                     self
     }
                     #[inline(always)]
       pub fn name(&mut self, name: String) -> &mut Self {
         self.instruction.name = Some(name);
+        self
+      }
+                #[inline(always)]
+      pub fn participants(&mut self, participants: [Participant; 5]) -> &mut Self {
+        self.instruction.participants = Some(participants);
+        self
+      }
+                #[inline(always)]
+      pub fn bot_wallet(&mut self, bot_wallet: Pubkey) -> &mut Self {
+        self.instruction.bot_wallet = Some(bot_wallet);
+        self
+      }
+                #[inline(always)]
+      pub fn participant_wallet0(&mut self, participant_wallet0: Pubkey) -> &mut Self {
+        self.instruction.participant_wallet0 = Some(participant_wallet0);
+        self
+      }
+                #[inline(always)]
+      pub fn participant_wallet1(&mut self, participant_wallet1: Pubkey) -> &mut Self {
+        self.instruction.participant_wallet1 = Some(participant_wallet1);
+        self
+      }
+                #[inline(always)]
+      pub fn participant_wallet2(&mut self, participant_wallet2: Pubkey) -> &mut Self {
+        self.instruction.participant_wallet2 = Some(participant_wallet2);
+        self
+      }
+                #[inline(always)]
+      pub fn participant_wallet3(&mut self, participant_wallet3: Pubkey) -> &mut Self {
+        self.instruction.participant_wallet3 = Some(participant_wallet3);
+        self
+      }
+                #[inline(always)]
+      pub fn participant_wallet4(&mut self, participant_wallet4: Pubkey) -> &mut Self {
+        self.instruction.participant_wallet4 = Some(participant_wallet4);
         self
       }
         /// Add an additional account to the instruction.
@@ -665,23 +630,22 @@ impl<'a, 'b> ClaimAndDistributeCpiBuilder<'a, 'b> {
   #[allow(clippy::clone_on_copy)]
   #[allow(clippy::vec_init_then_push)]
   pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
-          let args = ClaimAndDistributeInstructionArgs {
+          let args = InitializeFractionInstructionArgs {
                                                               name: self.instruction.name.clone().expect("name is not set"),
+                                                                  participants: self.instruction.participants.clone().expect("participants is not set"),
+                                                                  bot_wallet: self.instruction.bot_wallet.clone().expect("bot_wallet is not set"),
+                                                                  participant_wallet0: self.instruction.participant_wallet0.clone().expect("participant_wallet0 is not set"),
+                                                                  participant_wallet1: self.instruction.participant_wallet1.clone().expect("participant_wallet1 is not set"),
+                                                                  participant_wallet2: self.instruction.participant_wallet2.clone().expect("participant_wallet2 is not set"),
+                                                                  participant_wallet3: self.instruction.participant_wallet3.clone().expect("participant_wallet3 is not set"),
+                                                                  participant_wallet4: self.instruction.participant_wallet4.clone().expect("participant_wallet4 is not set"),
                                     };
-        let instruction = ClaimAndDistributeCpi {
+        let instruction = InitializeFractionCpi {
         __program: self.instruction.__program,
-                  
-          bot: self.instruction.bot.expect("bot is not set"),
                   
           authority: self.instruction.authority.expect("authority is not set"),
                   
           fraction_config: self.instruction.fraction_config.expect("fraction_config is not set"),
-                  
-          treasury: self.instruction.treasury.expect("treasury is not set"),
-                  
-          treasury_mint: self.instruction.treasury_mint.expect("treasury_mint is not set"),
-                  
-          bot_token_account: self.instruction.bot_token_account.expect("bot_token_account is not set"),
                   
           participant_balance0: self.instruction.participant_balance0.expect("participant_balance0 is not set"),
                   
@@ -695,7 +659,7 @@ impl<'a, 'b> ClaimAndDistributeCpiBuilder<'a, 'b> {
                   
           bot_balance: self.instruction.bot_balance.expect("bot_balance is not set"),
                   
-          token_program: self.instruction.token_program.expect("token_program is not set"),
+          system_program: self.instruction.system_program.expect("system_program is not set"),
                           __args: args,
             };
     instruction.invoke_signed_with_remaining_accounts(signers_seeds, &self.instruction.__remaining_accounts)
@@ -703,22 +667,25 @@ impl<'a, 'b> ClaimAndDistributeCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct ClaimAndDistributeCpiBuilderInstruction<'a, 'b> {
+struct InitializeFractionCpiBuilderInstruction<'a, 'b> {
   __program: &'b solana_account_info::AccountInfo<'a>,
-            bot: Option<&'b solana_account_info::AccountInfo<'a>>,
-                authority: Option<&'b solana_account_info::AccountInfo<'a>>,
+            authority: Option<&'b solana_account_info::AccountInfo<'a>>,
                 fraction_config: Option<&'b solana_account_info::AccountInfo<'a>>,
-                treasury: Option<&'b solana_account_info::AccountInfo<'a>>,
-                treasury_mint: Option<&'b solana_account_info::AccountInfo<'a>>,
-                bot_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
                 participant_balance0: Option<&'b solana_account_info::AccountInfo<'a>>,
                 participant_balance1: Option<&'b solana_account_info::AccountInfo<'a>>,
                 participant_balance2: Option<&'b solana_account_info::AccountInfo<'a>>,
                 participant_balance3: Option<&'b solana_account_info::AccountInfo<'a>>,
                 participant_balance4: Option<&'b solana_account_info::AccountInfo<'a>>,
                 bot_balance: Option<&'b solana_account_info::AccountInfo<'a>>,
-                token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
+                system_program: Option<&'b solana_account_info::AccountInfo<'a>>,
                         name: Option<String>,
+                participants: Option<[Participant; 5]>,
+                bot_wallet: Option<Pubkey>,
+                participant_wallet0: Option<Pubkey>,
+                participant_wallet1: Option<Pubkey>,
+                participant_wallet2: Option<Pubkey>,
+                participant_wallet3: Option<Pubkey>,
+                participant_wallet4: Option<Pubkey>,
         /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
   __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }

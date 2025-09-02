@@ -5,7 +5,7 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
-      pub(crate) mod splits;
+      pub(crate) mod fraction;
   
-      pub use self::splits::SplitsError;
+      pub use self::fraction::FractionError;
   

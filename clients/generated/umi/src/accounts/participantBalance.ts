@@ -33,14 +33,14 @@ export type ParticipantBalance = Account<ParticipantBalanceAccountData>;
 
 export type ParticipantBalanceAccountData = {
   discriminator: Uint8Array;
-  splitter: PublicKey;
+  fraction: PublicKey;
   participant: PublicKey;
   amount: bigint;
   bump: number;
 };
 
 export type ParticipantBalanceAccountDataArgs = {
-  splitter: PublicKey;
+  fraction: PublicKey;
   participant: PublicKey;
   amount: number | bigint;
   bump: number;
@@ -58,7 +58,7 @@ export function getParticipantBalanceAccountDataSerializer(): Serializer<
     struct<ParticipantBalanceAccountData>(
       [
         ['discriminator', bytes({ size: 8 })],
-        ['splitter', publicKeySerializer()],
+        ['fraction', publicKeySerializer()],
         ['participant', publicKeySerializer()],
         ['amount', u64()],
         ['bump', u8()],
@@ -146,19 +146,19 @@ export function getParticipantBalanceGpaBuilder(
   context: Pick<Context, 'rpc' | 'programs'>
 ) {
   const programId = context.programs.getPublicKey(
-    'splits',
+    'fraction',
     'FM9hKTFN98M2uo7zw2huAbx7vJTQpfgFuxr9rVCTt8UY'
   );
   return gpaBuilder(context, programId)
     .registerFields<{
       discriminator: Uint8Array;
-      splitter: PublicKey;
+      fraction: PublicKey;
       participant: PublicKey;
       amount: number | bigint;
       bump: number;
     }>({
       discriminator: [0, bytes({ size: 8 })],
-      splitter: [8, publicKeySerializer()],
+      fraction: [8, publicKeySerializer()],
       participant: [40, publicKeySerializer()],
       amount: [72, u64()],
       bump: [80, u8()],

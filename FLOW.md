@@ -8,7 +8,7 @@ This document outlines the complete flow of the Fraction system, from initial se
 
 ```
 1. Setup Phase
-   ├── Initialize Splitter
+   ├── Initialize Fraction
    ├── Configure Participants
    └── Set Bot Wallet
 
@@ -33,23 +33,23 @@ This document outlines the complete flow of the Fraction system, from initial se
 
 ## Phase 1: Setup Phase
 
-### 1.1 Initialize Splitter
+### 1.1 Initialize Fraction
 
-**Trigger**: Authority wallet calls `initialize_splitter`
+**Trigger**: Authority wallet calls `initialize_fraction`
 
 **What Happens**:
-1. **Create SplitterConfig Account**
-   - Generate PDA using `[b"splitter_config", authority.key(), name.as_ref()]`
-   - Store splitter configuration data
+1. **Create FractionConfig Account**
+   - Generate PDA using `[b"fraction_config", authority.key(), name.as_ref()]`
+   - Store fraction configuration data
    - Set participant shares (must total 10,000 BPS)
 
 2. **Create Participant Balance Accounts**
-   - Generate 5 PDAs using `[b"balance", splitter_config.key(), participant_wallet]`
+   - Generate 5 PDAs using `[b"balance", fraction_config.key(), participant_wallet]`
    - Initialize each with 0 balance
    - Link to respective participant wallets
 
 3. **Create Bot Balance Account**
-   - Generate PDA using `[b"bot_balance", splitter_config.key(), bot_wallet]`
+   - Generate PDA using `[b"bot_balance", fraction_config.key(), bot_wallet]`
    - Initialize with 0 balance
    - Track bot's earned incentives
 
@@ -57,9 +57,9 @@ This document outlines the complete flow of the Fraction system, from initial se
 
 **Data Stored**:
 ```rust
-SplitterConfig {
+FractionConfig {
     authority: authority_pubkey,
-    name: "my_splitter",
+    name: "my_fraction",
     participants: [
         { wallet: participant1, shareBps: 3000 }, // 30%
         { wallet: participant2, shareBps: 2500 }, // 25%
@@ -74,7 +74,7 @@ SplitterConfig {
 ```
 
 **Accounts Created**:
-- `splitter_config` PDA (owner: program)
+- `fraction_config` PDA (owner: program)
 - `participant_balance_0` through `participant_balance_4` PDAs
 - `bot_balance` PDA
 
@@ -82,10 +82,10 @@ SplitterConfig {
 
 ### 1.2 Configure Participants (Optional)
 
-**Trigger**: Authority calls `update_splitter`
+**Trigger**: Authority calls `update_fraction`
 
 **What Happens**:
-1. **Validate Authority**: Ensure caller is the splitter authority
+1. **Validate Authority**: Ensure caller is the fraction authority
 2. **Validate Shares**: Ensure participant shares sum to exactly 10,000 BPS (100%)
 3. **Update Participant Shares**: Modify individual participant percentages
 4. **Update Bot Wallet**: Change the bot wallet if needed
@@ -115,7 +115,7 @@ participants: [
 
 **What Happens**:
 1. **Create ATA**: Generate Associated Token Account for the treasury
-2. **Set Authority**: Treasury is owned by splitter_config PDA
+2. **Set Authority**: Treasury is owned by fraction_config PDA
 3. **Initialize Empty**: Treasury starts with 0 balance
 4. **Required Constraint**: Treasury must be an associated token account with proper mint and authority constraints
 
@@ -125,7 +125,7 @@ const treasury = await getOrCreateAssociatedTokenAccount(
     connection,
     payer,
     mintAddress,
-    splitterConfigPda,
+    fractionConfigPda,
     true // Allow PDA owner
 );
 ```
@@ -136,7 +136,7 @@ const treasury = await getOrCreateAssociatedTokenAccount(
 
 **What Happens**:
 1. **Transfer Tokens**: Move tokens from user to treasury using SPL transfer
-2. **No State Update**: Splitter config remains unchanged
+2. **No State Update**: Fraction config remains unchanged
 3. **Ready for Distribution**: Treasury holds funds until bot distributes
 
 **Client-Side Code**:
@@ -155,7 +155,7 @@ await transfer(
 ```
 Before: Treasury balance = 0
 After: Treasury balance = 1,000,000 tokens
-Splitter config: unchanged
+Fraction config: unchanged
 ```
 
 ---
@@ -171,7 +171,7 @@ Splitter config: unchanged
 - Caller must be the configured `bot_wallet`
 - All participant balance accounts must exist
 - Bot must sign the transaction
-- Treasury must be an associated token account owned by splitter config PDA
+- Treasury must be an associated token account owned by fraction config PDA
 
 ### 3.2 Calculate Distribution
 
@@ -256,7 +256,7 @@ balance: 980000  // Participant funds ready for withdrawal
 - Participant must have allocated balance > 0
 - Participant must sign the transaction
 - Participant must provide correct balance PDA
-- Treasury must be an associated token account owned by splitter config PDA
+- Treasury must be an associated token account owned by fraction config PDA
 
 **What Happens**:
 1. **Validate Withdrawal**: Ensure participant has allocated funds > 0
@@ -314,7 +314,7 @@ Bot Wallet: Project manager
 
 **Phase 1: Setup**
 ```
-1. Authority initializes splitter
+1. Authority initializes fraction
 2. Creates all necessary accounts
 3. Sets initial 20% shares for each member
 ```
@@ -399,7 +399,7 @@ Withdraw: Participant only (with participant signature)
 ```
 Input: Authority + Participants + Bot wallet
 Processing: Create PDAs + Set initial state
-Output: Complete splitter configuration
+Output: Complete fraction configuration
 ```
 
 **Treasury Management**:

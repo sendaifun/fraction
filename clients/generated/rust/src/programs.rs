@@ -8,6 +8,6 @@
 use solana_pubkey::{pubkey, Pubkey};
 
 
-  /// `splits` program ID.
-  pub const SPLITS_ID: Pubkey = pubkey!("FM9hKTFN98M2uo7zw2huAbx7vJTQpfgFuxr9rVCTt8UY");
+  /// `fraction` program ID.
+  pub const FRACTION_ID: Pubkey = pubkey!("FM9hKTFN98M2uo7zw2huAbx7vJTQpfgFuxr9rVCTt8UY");
 

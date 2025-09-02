@@ -21,7 +21,7 @@ pub struct WithdrawShare {
           pub authority: solana_pubkey::Pubkey,
           
               
-          pub splitter_config: solana_pubkey::Pubkey,
+          pub fraction_config: solana_pubkey::Pubkey,
           
               
           pub participant_balance: solana_pubkey::Pubkey,
@@ -56,7 +56,7 @@ impl WithdrawShare {
             false
           ));
                                           accounts.push(solana_instruction::AccountMeta::new(
-            self.splitter_config,
+            self.fraction_config,
             false
           ));
                                           accounts.push(solana_instruction::AccountMeta::new(
@@ -85,7 +85,7 @@ impl WithdrawShare {
       data.append(&mut args);
     
     solana_instruction::Instruction {
-      program_id: crate::SPLITS_ID,
+      program_id: crate::FRACTION_ID,
       accounts,
       data,
     }
@@ -125,7 +125,7 @@ impl Default for WithdrawShareInstructionData {
 ///
                 ///   0. `[signer]` participant
           ///   1. `[]` authority
-                ///   2. `[writable]` splitter_config
+                ///   2. `[writable]` fraction_config
                 ///   3. `[writable]` participant_balance
                 ///   4. `[writable]` treasury
           ///   5. `[]` treasury_mint
@@ -135,7 +135,7 @@ impl Default for WithdrawShareInstructionData {
 pub struct WithdrawShareBuilder {
             participant: Option<solana_pubkey::Pubkey>,
                 authority: Option<solana_pubkey::Pubkey>,
-                splitter_config: Option<solana_pubkey::Pubkey>,
+                fraction_config: Option<solana_pubkey::Pubkey>,
                 participant_balance: Option<solana_pubkey::Pubkey>,
                 treasury: Option<solana_pubkey::Pubkey>,
                 treasury_mint: Option<solana_pubkey::Pubkey>,
@@ -160,8 +160,8 @@ impl WithdrawShareBuilder {
                     self
     }
             #[inline(always)]
-    pub fn splitter_config(&mut self, splitter_config: solana_pubkey::Pubkey) -> &mut Self {
-                        self.splitter_config = Some(splitter_config);
+    pub fn fraction_config(&mut self, fraction_config: solana_pubkey::Pubkey) -> &mut Self {
+                        self.fraction_config = Some(fraction_config);
                     self
     }
             #[inline(always)]
@@ -211,7 +211,7 @@ impl WithdrawShareBuilder {
     let accounts = WithdrawShare {
                               participant: self.participant.expect("participant is not set"),
                                         authority: self.authority.expect("authority is not set"),
-                                        splitter_config: self.splitter_config.expect("splitter_config is not set"),
+                                        fraction_config: self.fraction_config.expect("fraction_config is not set"),
                                         participant_balance: self.participant_balance.expect("participant_balance is not set"),
                                         treasury: self.treasury.expect("treasury is not set"),
                                         treasury_mint: self.treasury_mint.expect("treasury_mint is not set"),
@@ -236,7 +236,7 @@ impl WithdrawShareBuilder {
               pub authority: &'b solana_account_info::AccountInfo<'a>,
                 
                     
-              pub splitter_config: &'b solana_account_info::AccountInfo<'a>,
+              pub fraction_config: &'b solana_account_info::AccountInfo<'a>,
                 
                     
               pub participant_balance: &'b solana_account_info::AccountInfo<'a>,
@@ -266,7 +266,7 @@ pub struct WithdrawShareCpi<'a, 'b> {
           pub authority: &'b solana_account_info::AccountInfo<'a>,
           
               
-          pub splitter_config: &'b solana_account_info::AccountInfo<'a>,
+          pub fraction_config: &'b solana_account_info::AccountInfo<'a>,
           
               
           pub participant_balance: &'b solana_account_info::AccountInfo<'a>,
@@ -296,7 +296,7 @@ impl<'a, 'b> WithdrawShareCpi<'a, 'b> {
       __program: program,
               participant: accounts.participant,
               authority: accounts.authority,
-              splitter_config: accounts.splitter_config,
+              fraction_config: accounts.fraction_config,
               participant_balance: accounts.participant_balance,
               treasury: accounts.treasury,
               treasury_mint: accounts.treasury_mint,
@@ -335,7 +335,7 @@ impl<'a, 'b> WithdrawShareCpi<'a, 'b> {
             false
           ));
                                           accounts.push(solana_instruction::AccountMeta::new(
-            *self.splitter_config.key,
+            *self.fraction_config.key,
             false
           ));
                                           accounts.push(solana_instruction::AccountMeta::new(
@@ -370,7 +370,7 @@ impl<'a, 'b> WithdrawShareCpi<'a, 'b> {
       data.append(&mut args);
     
     let instruction = solana_instruction::Instruction {
-      program_id: crate::SPLITS_ID,
+      program_id: crate::FRACTION_ID,
       accounts,
       data,
     };
@@ -378,7 +378,7 @@ impl<'a, 'b> WithdrawShareCpi<'a, 'b> {
     account_infos.push(self.__program.clone());
                   account_infos.push(self.participant.clone());
                         account_infos.push(self.authority.clone());
-                        account_infos.push(self.splitter_config.clone());
+                        account_infos.push(self.fraction_config.clone());
                         account_infos.push(self.participant_balance.clone());
                         account_infos.push(self.treasury.clone());
                         account_infos.push(self.treasury_mint.clone());
@@ -400,7 +400,7 @@ impl<'a, 'b> WithdrawShareCpi<'a, 'b> {
 ///
                 ///   0. `[signer]` participant
           ///   1. `[]` authority
-                ///   2. `[writable]` splitter_config
+                ///   2. `[writable]` fraction_config
                 ///   3. `[writable]` participant_balance
                 ///   4. `[writable]` treasury
           ///   5. `[]` treasury_mint
@@ -417,7 +417,7 @@ impl<'a, 'b> WithdrawShareCpiBuilder<'a, 'b> {
       __program: program,
               participant: None,
               authority: None,
-              splitter_config: None,
+              fraction_config: None,
               participant_balance: None,
               treasury: None,
               treasury_mint: None,
@@ -439,8 +439,8 @@ impl<'a, 'b> WithdrawShareCpiBuilder<'a, 'b> {
                     self
     }
       #[inline(always)]
-    pub fn splitter_config(&mut self, splitter_config: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-                        self.instruction.splitter_config = Some(splitter_config);
+    pub fn fraction_config(&mut self, fraction_config: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
+                        self.instruction.fraction_config = Some(fraction_config);
                     self
     }
       #[inline(always)]
@@ -505,7 +505,7 @@ impl<'a, 'b> WithdrawShareCpiBuilder<'a, 'b> {
                   
           authority: self.instruction.authority.expect("authority is not set"),
                   
-          splitter_config: self.instruction.splitter_config.expect("splitter_config is not set"),
+          fraction_config: self.instruction.fraction_config.expect("fraction_config is not set"),
                   
           participant_balance: self.instruction.participant_balance.expect("participant_balance is not set"),
                   
@@ -527,7 +527,7 @@ struct WithdrawShareCpiBuilderInstruction<'a, 'b> {
   __program: &'b solana_account_info::AccountInfo<'a>,
             participant: Option<&'b solana_account_info::AccountInfo<'a>>,
                 authority: Option<&'b solana_account_info::AccountInfo<'a>>,
-                splitter_config: Option<&'b solana_account_info::AccountInfo<'a>>,
+                fraction_config: Option<&'b solana_account_info::AccountInfo<'a>>,
                 participant_balance: Option<&'b solana_account_info::AccountInfo<'a>>,
                 treasury: Option<&'b solana_account_info::AccountInfo<'a>>,
                 treasury_mint: Option<&'b solana_account_info::AccountInfo<'a>>,

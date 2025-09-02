@@ -1,6 +1,6 @@
 # Fraction
 
-A secure, automated token distribution system built on Solana that splits funds among multiple participants with a fixed bot incentive.
+A secure, automated token distribution system built on Solana that distributes funds among multiple participants with a fixed bot incentive.
 
 ## Overview
 
@@ -21,7 +21,7 @@ Fraction is a Solana program that enables automated token distribution among mul
 
 ### Core Components
 
-1. **Splitter Config**: Main configuration PDA storing participant details and bot wallet
+1. **Fraction Config**: Main configuration PDA storing participant details and bot wallet
 2. **Treasury**: Associated Token Account (client-managed) holding funds for distribution
 3. **Participant Balances**: Individual PDAs tracking each participant's allocated amount  
 4. **Bot Balance**: PDA tracking bot's earned incentives
@@ -34,11 +34,11 @@ Client Creates Treasury → Client Funds Treasury → Bot Distributes (Bot: 2% i
 
 ## Instructions
 
-### 1. Initialize Splitter
-Creates a new splitter with participant configuration (authority only).
+### 1. Initialize Fraction
+Creates a new fraction with participant configuration (authority only).
 
 ```rust
-initialize_splitter(
+initialize_fraction(
     name: String,
     participants: [Participant; 5],
     bot_wallet: Pubkey,
@@ -51,11 +51,11 @@ initialize_splitter(
 )
 ```
 
-### 2. Update Splitter
+### 2. Update Fraction
 Modify participant shares and bot wallet (authority only).
 
 ```rust
-update_splitter(
+update_fraction(
     name: String,
     participants: [Participant; 5],
     bot_wallet: Pubkey,
@@ -66,9 +66,9 @@ update_splitter(
 Create treasury and fund it with tokens for distribution.
 
 ```typescript
-// Create treasury ATA (client-side) - MUST be owned by splitter config PDA
+// Create treasury ATA (client-side) - MUST be owned by fraction config PDA
 const treasury = await getOrCreateAssociatedTokenAccount(
-    connection, payer, mint, splitterConfigPda, true
+    connection, payer, mint, fractionConfigPda, true
 );
 
 // Fund treasury (client-side)  
@@ -84,7 +84,7 @@ claim_and_distribute(name: String)
 - Only the designated bot wallet can call this instruction
 - Bot receives 2% immediately, participants get balance records updated
 - Treasury funds are preserved for participant withdrawals
-- Treasury must be an associated token account owned by the splitter config PDA
+- Treasury must be an associated token account owned by the fraction config PDA
 
 ### 5. Withdraw Share
 Individual participants withdraw their allocated tokens.
@@ -94,15 +94,15 @@ withdraw_share(name: String)
 ```
 - Each participant can withdraw their allocated amount from treasury
 - Participant balance record is reset to 0 after withdrawal
-- Treasury must be an associated token account owned by the splitter config PDA
+- Treasury must be an associated token account owned by the fraction config PDA
 
 ## Account Structure
 
-### SplitterConfig
+### FractionConfig
 ```rust
-pub struct SplitterConfig {
+pub struct FractionConfig {
     pub authority: Pubkey,               // Admin wallet
-    pub name: String,                    // Splitter identifier
+    pub name: String,                    // Fraction identifier
     pub participants: [Participant; 5], // Fixed array of 5 participants
     pub bot_wallet: Pubkey,             // Bot wallet address
     pub incentive_bps: u8,              // Fixed at 200 (2%)
@@ -121,7 +121,7 @@ pub struct Participant {
 ### ParticipantBalance
 ```rust
 pub struct ParticipantBalance {
-    pub splitter: Pubkey,     // Associated splitter
+    pub fraction: Pubkey,     // Associated fraction
     pub participant: Pubkey,  // Participant wallet
     pub amount: u64,          // Allocated amount
     pub bump: u8,             // PDA bump seed
@@ -187,13 +187,13 @@ All tests validate the complete lifecycle: initialization → treasury managemen
 ### Step-by-Step Process
 
 1. **Setup Phase** (Authority)
-   - Authority initializes splitter with 5 participants and their share percentages
+   - Authority initializes fraction with 5 participants and their share percentages
    - All participant shares must total exactly 10,000 BPS (100%)
    - Bot wallet is designated for distribution control
 
 2. **Treasury Phase** (Client-Side)
    - Client creates Associated Token Account (ATA) for treasury
-   - Treasury is owned by the splitter config PDA for security
+   - Treasury is owned by the fraction config PDA for security
    - Client transfers tokens to treasury for distribution
 
 3. **Distribution Phase** (Bot-Only)
@@ -227,7 +227,7 @@ import { getOrCreateAssociatedTokenAccount, transfer } from "@solana/spl-token";
 // Initialize program
 const program = anchor.workspace.Fraction as Program<Fraction>;
 
-// Create a new splitter (5 participants required)
+// Create a new fraction (5 participants required)
 const participants = [
   { wallet: participant1.publicKey, shareBps: 3000 }, // 30%
   { wallet: participant2.publicKey, shareBps: 2500 }, // 25% 
@@ -237,8 +237,8 @@ const participants = [
 ];
 
 await program.methods
-  .initializeSplitter(
-    "my-splitter",
+  .initializeFraction(
+    "my-fraction",
     participants,
     botWallet.publicKey,
     participant1.publicKey,
@@ -249,7 +249,7 @@ await program.methods
   )
   .accountsPartial({
     authority: authority.publicKey,
-    splitterConfig: splitterConfigPda,
+    fractionConfig: fractionConfigPda,
     participantBalance0: participantBalance0Pda,
     participantBalance1: participantBalance1Pda,
     participantBalance2: participantBalance2Pda,
@@ -262,7 +262,7 @@ await program.methods
 
 // Create and fund treasury (client-side)
 const treasury = await getOrCreateAssociatedTokenAccount(
-  connection, payer, mintAddress, splitterConfigPda, true
+  connection, payer, mintAddress, fractionConfigPda, true
 );
 
 await transfer(
@@ -271,11 +271,11 @@ await transfer(
 
 // Trigger distribution (bot only)
 await program.methods
-  .claimAndDistribute("my-splitter")
+  .claimAndDistribute("my-fraction")
   .accountsPartial({
     bot: botWallet.publicKey,
     authority: authority.publicKey,
-    splitterConfig: splitterConfigPda,
+    fractionConfig: fractionConfigPda,
     treasury: treasury.address,
     treasuryMint: mintAddress,
     botTokenAccount: botTokenAccount,
@@ -291,11 +291,11 @@ await program.methods
 
 // Participant withdraws (individual call)
 await program.methods
-  .withdrawShare("my-splitter")
+  .withdrawShare("my-fraction")
   .accountsPartial({
     participant: participant1.publicKey,
     authority: authority.publicKey,
-    splitterConfig: splitterConfigPda,
+    fractionConfig: fractionConfigPda,
     participantBalance: participantBalance0Pda,
     treasury: treasury.address,
     treasuryMint: mintAddress,
@@ -312,7 +312,7 @@ await program.methods
 - **Token Safety**: Uses `transfer_checked` for all token operations
 - **Mathematical Precision**: Basis points system for accurate percentage calculations
 - **Account Validation**: Comprehensive constraint checking via Anchor
-- **Associated Token Accounts**: Treasury must be ATA owned by splitter config PDA
+- **Associated Token Accounts**: Treasury must be ATA owned by fraction config PDA
 - **Share Validation**: Participant shares must sum to exactly 10,000 BPS (100%)
 
 ## Use Cases

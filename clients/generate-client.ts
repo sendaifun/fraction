@@ -3,7 +3,7 @@ import { renderVisitor as renderJavaScriptVisitor } from "@codama/renderers-js";
 import { renderVisitor as renderJavaScriptUmiVisitor } from "@codama/renderers-js-umi";
 import { renderVisitor as renderRustVisitor } from "@codama/renderers-rust";
 import { visit } from "@codama/visitors-core";
-import anchorIdl from "../target/idl/splits.json"; // Note: if you initiated your project with a different name, you may need to change this path
+import anchorIdl from "../target/idl/fraction.json"; // Note: if you initiated your project with a different name, you may need to change this path
 
 async function generateClients() {
     const node = rootNodeFromAnchorWithoutDefaultVisitor(anchorIdl as AnchorIdl);

@@ -38,7 +38,7 @@ import {
   type TransactionSigner,
   type WritableAccount,
 } from '@solana/kit';
-import { SPLITS_PROGRAM_ADDRESS } from '../programs';
+import { FRACTION_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
   expectSome,
@@ -57,10 +57,10 @@ export function getWithdrawShareDiscriminatorBytes() {
 }
 
 export type WithdrawShareInstruction<
-  TProgram extends string = typeof SPLITS_PROGRAM_ADDRESS,
+  TProgram extends string = typeof FRACTION_PROGRAM_ADDRESS,
   TAccountParticipant extends string | AccountMeta<string> = string,
   TAccountAuthority extends string | AccountMeta<string> = string,
-  TAccountSplitterConfig extends string | AccountMeta<string> = string,
+  TAccountFractionConfig extends string | AccountMeta<string> = string,
   TAccountParticipantBalance extends string | AccountMeta<string> = string,
   TAccountTreasury extends string | AccountMeta<string> = string,
   TAccountTreasuryMint extends string | AccountMeta<string> = string,
@@ -78,9 +78,9 @@ export type WithdrawShareInstruction<
       TAccountAuthority extends string
         ? ReadonlyAccount<TAccountAuthority>
         : TAccountAuthority,
-      TAccountSplitterConfig extends string
-        ? WritableAccount<TAccountSplitterConfig>
-        : TAccountSplitterConfig,
+      TAccountFractionConfig extends string
+        ? WritableAccount<TAccountFractionConfig>
+        : TAccountFractionConfig,
       TAccountParticipantBalance extends string
         ? WritableAccount<TAccountParticipantBalance>
         : TAccountParticipantBalance,
@@ -137,7 +137,7 @@ export function getWithdrawShareInstructionDataCodec(): Codec<
 export type WithdrawShareAsyncInput<
   TAccountParticipant extends string = string,
   TAccountAuthority extends string = string,
-  TAccountSplitterConfig extends string = string,
+  TAccountFractionConfig extends string = string,
   TAccountParticipantBalance extends string = string,
   TAccountTreasury extends string = string,
   TAccountTreasuryMint extends string = string,
@@ -146,7 +146,7 @@ export type WithdrawShareAsyncInput<
 > = {
   participant: TransactionSigner<TAccountParticipant>;
   authority: Address<TAccountAuthority>;
-  splitterConfig?: Address<TAccountSplitterConfig>;
+  fractionConfig?: Address<TAccountFractionConfig>;
   participantBalance?: Address<TAccountParticipantBalance>;
   treasury?: Address<TAccountTreasury>;
   treasuryMint: Address<TAccountTreasuryMint>;
@@ -158,18 +158,18 @@ export type WithdrawShareAsyncInput<
 export async function getWithdrawShareInstructionAsync<
   TAccountParticipant extends string,
   TAccountAuthority extends string,
-  TAccountSplitterConfig extends string,
+  TAccountFractionConfig extends string,
   TAccountParticipantBalance extends string,
   TAccountTreasury extends string,
   TAccountTreasuryMint extends string,
   TAccountParticipantTokenAccount extends string,
   TAccountTokenProgram extends string,
-  TProgramAddress extends Address = typeof SPLITS_PROGRAM_ADDRESS,
+  TProgramAddress extends Address = typeof FRACTION_PROGRAM_ADDRESS,
 >(
   input: WithdrawShareAsyncInput<
     TAccountParticipant,
     TAccountAuthority,
-    TAccountSplitterConfig,
+    TAccountFractionConfig,
     TAccountParticipantBalance,
     TAccountTreasury,
     TAccountTreasuryMint,
@@ -182,7 +182,7 @@ export async function getWithdrawShareInstructionAsync<
     TProgramAddress,
     TAccountParticipant,
     TAccountAuthority,
-    TAccountSplitterConfig,
+    TAccountFractionConfig,
     TAccountParticipantBalance,
     TAccountTreasury,
     TAccountTreasuryMint,
@@ -191,13 +191,13 @@ export async function getWithdrawShareInstructionAsync<
   >
 > {
   // Program address.
-  const programAddress = config?.programAddress ?? SPLITS_PROGRAM_ADDRESS;
+  const programAddress = config?.programAddress ?? FRACTION_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
     participant: { value: input.participant ?? null, isWritable: false },
     authority: { value: input.authority ?? null, isWritable: false },
-    splitterConfig: { value: input.splitterConfig ?? null, isWritable: true },
+    fractionConfig: { value: input.fractionConfig ?? null, isWritable: true },
     participantBalance: {
       value: input.participantBalance ?? null,
       isWritable: true,
@@ -219,13 +219,13 @@ export async function getWithdrawShareInstructionAsync<
   const args = { ...input };
 
   // Resolve default values.
-  if (!accounts.splitterConfig.value) {
-    accounts.splitterConfig.value = await getProgramDerivedAddress({
+  if (!accounts.fractionConfig.value) {
+    accounts.fractionConfig.value = await getProgramDerivedAddress({
       programAddress,
       seeds: [
         getBytesEncoder().encode(
           new Uint8Array([
-            115, 112, 108, 105, 116, 116, 101, 114, 95, 99, 111, 110, 102, 105,
+            102, 114, 97, 99, 116, 105, 111, 110, 95, 99, 111, 110, 102, 105,
             103,
           ])
         ),
@@ -244,7 +244,7 @@ export async function getWithdrawShareInstructionAsync<
           new Uint8Array([98, 97, 108, 97, 110, 99, 101])
         ),
         getAddressEncoder().encode(
-          expectAddress(accounts.splitterConfig.value)
+          expectAddress(accounts.fractionConfig.value)
         ),
         getAddressEncoder().encode(expectAddress(accounts.participant.value)),
       ],
@@ -256,7 +256,7 @@ export async function getWithdrawShareInstructionAsync<
         'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL' as Address<'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'>,
       seeds: [
         getAddressEncoder().encode(
-          expectAddress(accounts.splitterConfig.value)
+          expectAddress(accounts.fractionConfig.value)
         ),
         getAddressEncoder().encode(expectAddress(accounts.tokenProgram.value)),
         getAddressEncoder().encode(expectAddress(accounts.treasuryMint.value)),
@@ -269,7 +269,7 @@ export async function getWithdrawShareInstructionAsync<
     accounts: [
       getAccountMeta(accounts.participant),
       getAccountMeta(accounts.authority),
-      getAccountMeta(accounts.splitterConfig),
+      getAccountMeta(accounts.fractionConfig),
       getAccountMeta(accounts.participantBalance),
       getAccountMeta(accounts.treasury),
       getAccountMeta(accounts.treasuryMint),
@@ -284,7 +284,7 @@ export async function getWithdrawShareInstructionAsync<
     TProgramAddress,
     TAccountParticipant,
     TAccountAuthority,
-    TAccountSplitterConfig,
+    TAccountFractionConfig,
     TAccountParticipantBalance,
     TAccountTreasury,
     TAccountTreasuryMint,
@@ -298,7 +298,7 @@ export async function getWithdrawShareInstructionAsync<
 export type WithdrawShareInput<
   TAccountParticipant extends string = string,
   TAccountAuthority extends string = string,
-  TAccountSplitterConfig extends string = string,
+  TAccountFractionConfig extends string = string,
   TAccountParticipantBalance extends string = string,
   TAccountTreasury extends string = string,
   TAccountTreasuryMint extends string = string,
@@ -307,7 +307,7 @@ export type WithdrawShareInput<
 > = {
   participant: TransactionSigner<TAccountParticipant>;
   authority: Address<TAccountAuthority>;
-  splitterConfig: Address<TAccountSplitterConfig>;
+  fractionConfig: Address<TAccountFractionConfig>;
   participantBalance: Address<TAccountParticipantBalance>;
   treasury: Address<TAccountTreasury>;
   treasuryMint: Address<TAccountTreasuryMint>;
@@ -319,18 +319,18 @@ export type WithdrawShareInput<
 export function getWithdrawShareInstruction<
   TAccountParticipant extends string,
   TAccountAuthority extends string,
-  TAccountSplitterConfig extends string,
+  TAccountFractionConfig extends string,
   TAccountParticipantBalance extends string,
   TAccountTreasury extends string,
   TAccountTreasuryMint extends string,
   TAccountParticipantTokenAccount extends string,
   TAccountTokenProgram extends string,
-  TProgramAddress extends Address = typeof SPLITS_PROGRAM_ADDRESS,
+  TProgramAddress extends Address = typeof FRACTION_PROGRAM_ADDRESS,
 >(
   input: WithdrawShareInput<
     TAccountParticipant,
     TAccountAuthority,
-    TAccountSplitterConfig,
+    TAccountFractionConfig,
     TAccountParticipantBalance,
     TAccountTreasury,
     TAccountTreasuryMint,
@@ -342,7 +342,7 @@ export function getWithdrawShareInstruction<
   TProgramAddress,
   TAccountParticipant,
   TAccountAuthority,
-  TAccountSplitterConfig,
+  TAccountFractionConfig,
   TAccountParticipantBalance,
   TAccountTreasury,
   TAccountTreasuryMint,
@@ -350,13 +350,13 @@ export function getWithdrawShareInstruction<
   TAccountTokenProgram
 > {
   // Program address.
-  const programAddress = config?.programAddress ?? SPLITS_PROGRAM_ADDRESS;
+  const programAddress = config?.programAddress ?? FRACTION_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
     participant: { value: input.participant ?? null, isWritable: false },
     authority: { value: input.authority ?? null, isWritable: false },
-    splitterConfig: { value: input.splitterConfig ?? null, isWritable: true },
+    fractionConfig: { value: input.fractionConfig ?? null, isWritable: true },
     participantBalance: {
       value: input.participantBalance ?? null,
       isWritable: true,
@@ -382,7 +382,7 @@ export function getWithdrawShareInstruction<
     accounts: [
       getAccountMeta(accounts.participant),
       getAccountMeta(accounts.authority),
-      getAccountMeta(accounts.splitterConfig),
+      getAccountMeta(accounts.fractionConfig),
       getAccountMeta(accounts.participantBalance),
       getAccountMeta(accounts.treasury),
       getAccountMeta(accounts.treasuryMint),
@@ -397,7 +397,7 @@ export function getWithdrawShareInstruction<
     TProgramAddress,
     TAccountParticipant,
     TAccountAuthority,
-    TAccountSplitterConfig,
+    TAccountFractionConfig,
     TAccountParticipantBalance,
     TAccountTreasury,
     TAccountTreasuryMint,
@@ -409,14 +409,14 @@ export function getWithdrawShareInstruction<
 }
 
 export type ParsedWithdrawShareInstruction<
-  TProgram extends string = typeof SPLITS_PROGRAM_ADDRESS,
+  TProgram extends string = typeof FRACTION_PROGRAM_ADDRESS,
   TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
 > = {
   programAddress: Address<TProgram>;
   accounts: {
     participant: TAccountMetas[0];
     authority: TAccountMetas[1];
-    splitterConfig: TAccountMetas[2];
+    fractionConfig: TAccountMetas[2];
     participantBalance: TAccountMetas[3];
     treasury: TAccountMetas[4];
     treasuryMint: TAccountMetas[5];
@@ -449,7 +449,7 @@ export function parseWithdrawShareInstruction<
     accounts: {
       participant: getNextAccount(),
       authority: getNextAccount(),
-      splitterConfig: getNextAccount(),
+      fractionConfig: getNextAccount(),
       participantBalance: getNextAccount(),
       treasury: getNextAccount(),
       treasuryMint: getNextAccount(),

@@ -7,6 +7,6 @@
  */
 
 export * from './claimAndDistribute';
-export * from './initializeSplitter';
-export * from './updateSplitter';
+export * from './initializeFraction';
+export * from './updateFraction';
 export * from './withdrawShare';

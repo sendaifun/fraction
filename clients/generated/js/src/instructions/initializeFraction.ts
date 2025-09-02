@@ -12,7 +12,10 @@ import {
   combineCodec,
   fixDecoderSize,
   fixEncoderSize,
+  getAddressDecoder,
   getAddressEncoder,
+  getArrayDecoder,
+  getArrayEncoder,
   getBytesDecoder,
   getBytesEncoder,
   getProgramDerivedAddress,
@@ -33,10 +36,10 @@ import {
   type InstructionWithAccounts,
   type InstructionWithData,
   type ReadonlyAccount,
-  type ReadonlySignerAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
   type WritableAccount,
+  type WritableSignerAccount,
 } from '@solana/kit';
 import { FRACTION_PROGRAM_ADDRESS } from '../programs';
 import {
@@ -45,55 +48,48 @@ import {
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
+import {
+  getParticipantDecoder,
+  getParticipantEncoder,
+  type Participant,
+  type ParticipantArgs,
+} from '../types';
 
-export const CLAIM_AND_DISTRIBUTE_DISCRIMINATOR = new Uint8Array([
-  111, 147, 210, 144, 253, 16, 187, 238,
+export const INITIALIZE_FRACTION_DISCRIMINATOR = new Uint8Array([
+  159, 21, 140, 42, 52, 59, 103, 82,
 ]);
 
-export function getClaimAndDistributeDiscriminatorBytes() {
+export function getInitializeFractionDiscriminatorBytes() {
   return fixEncoderSize(getBytesEncoder(), 8).encode(
-    CLAIM_AND_DISTRIBUTE_DISCRIMINATOR
+    INITIALIZE_FRACTION_DISCRIMINATOR
   );
 }
 
-export type ClaimAndDistributeInstruction<
+export type InitializeFractionInstruction<
   TProgram extends string = typeof FRACTION_PROGRAM_ADDRESS,
-  TAccountBot extends string | AccountMeta<string> = string,
   TAccountAuthority extends string | AccountMeta<string> = string,
   TAccountFractionConfig extends string | AccountMeta<string> = string,
-  TAccountTreasury extends string | AccountMeta<string> = string,
-  TAccountTreasuryMint extends string | AccountMeta<string> = string,
-  TAccountBotTokenAccount extends string | AccountMeta<string> = string,
   TAccountParticipantBalance0 extends string | AccountMeta<string> = string,
   TAccountParticipantBalance1 extends string | AccountMeta<string> = string,
   TAccountParticipantBalance2 extends string | AccountMeta<string> = string,
   TAccountParticipantBalance3 extends string | AccountMeta<string> = string,
   TAccountParticipantBalance4 extends string | AccountMeta<string> = string,
   TAccountBotBalance extends string | AccountMeta<string> = string,
-  TAccountTokenProgram extends string | AccountMeta<string> = string,
+  TAccountSystemProgram extends
+    | string
+    | AccountMeta<string> = '11111111111111111111111111111111',
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
   InstructionWithAccounts<
     [
-      TAccountBot extends string
-        ? ReadonlySignerAccount<TAccountBot> & AccountSignerMeta<TAccountBot>
-        : TAccountBot,
       TAccountAuthority extends string
-        ? ReadonlyAccount<TAccountAuthority>
+        ? WritableSignerAccount<TAccountAuthority> &
+            AccountSignerMeta<TAccountAuthority>
         : TAccountAuthority,
       TAccountFractionConfig extends string
         ? WritableAccount<TAccountFractionConfig>
         : TAccountFractionConfig,
-      TAccountTreasury extends string
-        ? WritableAccount<TAccountTreasury>
-        : TAccountTreasury,
-      TAccountTreasuryMint extends string
-        ? ReadonlyAccount<TAccountTreasuryMint>
-        : TAccountTreasuryMint,
-      TAccountBotTokenAccount extends string
-        ? WritableAccount<TAccountBotTokenAccount>
-        : TAccountBotTokenAccount,
       TAccountParticipantBalance0 extends string
         ? WritableAccount<TAccountParticipantBalance0>
         : TAccountParticipantBalance0,
@@ -112,126 +108,143 @@ export type ClaimAndDistributeInstruction<
       TAccountBotBalance extends string
         ? WritableAccount<TAccountBotBalance>
         : TAccountBotBalance,
-      TAccountTokenProgram extends string
-        ? ReadonlyAccount<TAccountTokenProgram>
-        : TAccountTokenProgram,
+      TAccountSystemProgram extends string
+        ? ReadonlyAccount<TAccountSystemProgram>
+        : TAccountSystemProgram,
       ...TRemainingAccounts,
     ]
   >;
 
-export type ClaimAndDistributeInstructionData = {
+export type InitializeFractionInstructionData = {
   discriminator: ReadonlyUint8Array;
   name: string;
+  participants: Array<Participant>;
+  botWallet: Address;
+  participantWallet0: Address;
+  participantWallet1: Address;
+  participantWallet2: Address;
+  participantWallet3: Address;
+  participantWallet4: Address;
 };
 
-export type ClaimAndDistributeInstructionDataArgs = { name: string };
+export type InitializeFractionInstructionDataArgs = {
+  name: string;
+  participants: Array<ParticipantArgs>;
+  botWallet: Address;
+  participantWallet0: Address;
+  participantWallet1: Address;
+  participantWallet2: Address;
+  participantWallet3: Address;
+  participantWallet4: Address;
+};
 
-export function getClaimAndDistributeInstructionDataEncoder(): Encoder<ClaimAndDistributeInstructionDataArgs> {
+export function getInitializeFractionInstructionDataEncoder(): Encoder<InitializeFractionInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
       ['name', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+      ['participants', getArrayEncoder(getParticipantEncoder(), { size: 5 })],
+      ['botWallet', getAddressEncoder()],
+      ['participantWallet0', getAddressEncoder()],
+      ['participantWallet1', getAddressEncoder()],
+      ['participantWallet2', getAddressEncoder()],
+      ['participantWallet3', getAddressEncoder()],
+      ['participantWallet4', getAddressEncoder()],
     ]),
-    (value) => ({ ...value, discriminator: CLAIM_AND_DISTRIBUTE_DISCRIMINATOR })
+    (value) => ({ ...value, discriminator: INITIALIZE_FRACTION_DISCRIMINATOR })
   );
 }
 
-export function getClaimAndDistributeInstructionDataDecoder(): Decoder<ClaimAndDistributeInstructionData> {
+export function getInitializeFractionInstructionDataDecoder(): Decoder<InitializeFractionInstructionData> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['name', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ['participants', getArrayDecoder(getParticipantDecoder(), { size: 5 })],
+    ['botWallet', getAddressDecoder()],
+    ['participantWallet0', getAddressDecoder()],
+    ['participantWallet1', getAddressDecoder()],
+    ['participantWallet2', getAddressDecoder()],
+    ['participantWallet3', getAddressDecoder()],
+    ['participantWallet4', getAddressDecoder()],
   ]);
 }
 
-export function getClaimAndDistributeInstructionDataCodec(): Codec<
-  ClaimAndDistributeInstructionDataArgs,
-  ClaimAndDistributeInstructionData
+export function getInitializeFractionInstructionDataCodec(): Codec<
+  InitializeFractionInstructionDataArgs,
+  InitializeFractionInstructionData
 > {
   return combineCodec(
-    getClaimAndDistributeInstructionDataEncoder(),
-    getClaimAndDistributeInstructionDataDecoder()
+    getInitializeFractionInstructionDataEncoder(),
+    getInitializeFractionInstructionDataDecoder()
   );
 }
 
-export type ClaimAndDistributeAsyncInput<
-  TAccountBot extends string = string,
+export type InitializeFractionAsyncInput<
   TAccountAuthority extends string = string,
   TAccountFractionConfig extends string = string,
-  TAccountTreasury extends string = string,
-  TAccountTreasuryMint extends string = string,
-  TAccountBotTokenAccount extends string = string,
   TAccountParticipantBalance0 extends string = string,
   TAccountParticipantBalance1 extends string = string,
   TAccountParticipantBalance2 extends string = string,
   TAccountParticipantBalance3 extends string = string,
   TAccountParticipantBalance4 extends string = string,
   TAccountBotBalance extends string = string,
-  TAccountTokenProgram extends string = string,
+  TAccountSystemProgram extends string = string,
 > = {
-  bot: TransactionSigner<TAccountBot>;
-  authority: Address<TAccountAuthority>;
+  authority: TransactionSigner<TAccountAuthority>;
   fractionConfig?: Address<TAccountFractionConfig>;
-  treasury?: Address<TAccountTreasury>;
-  treasuryMint: Address<TAccountTreasuryMint>;
-  botTokenAccount: Address<TAccountBotTokenAccount>;
-  participantBalance0: Address<TAccountParticipantBalance0>;
-  participantBalance1: Address<TAccountParticipantBalance1>;
-  participantBalance2: Address<TAccountParticipantBalance2>;
-  participantBalance3: Address<TAccountParticipantBalance3>;
-  participantBalance4: Address<TAccountParticipantBalance4>;
+  participantBalance0?: Address<TAccountParticipantBalance0>;
+  participantBalance1?: Address<TAccountParticipantBalance1>;
+  participantBalance2?: Address<TAccountParticipantBalance2>;
+  participantBalance3?: Address<TAccountParticipantBalance3>;
+  participantBalance4?: Address<TAccountParticipantBalance4>;
   botBalance?: Address<TAccountBotBalance>;
-  tokenProgram: Address<TAccountTokenProgram>;
-  name: ClaimAndDistributeInstructionDataArgs['name'];
+  systemProgram?: Address<TAccountSystemProgram>;
+  name: InitializeFractionInstructionDataArgs['name'];
+  participants: InitializeFractionInstructionDataArgs['participants'];
+  botWallet: InitializeFractionInstructionDataArgs['botWallet'];
+  participantWallet0: InitializeFractionInstructionDataArgs['participantWallet0'];
+  participantWallet1: InitializeFractionInstructionDataArgs['participantWallet1'];
+  participantWallet2: InitializeFractionInstructionDataArgs['participantWallet2'];
+  participantWallet3: InitializeFractionInstructionDataArgs['participantWallet3'];
+  participantWallet4: InitializeFractionInstructionDataArgs['participantWallet4'];
 };
 
-export async function getClaimAndDistributeInstructionAsync<
-  TAccountBot extends string,
+export async function getInitializeFractionInstructionAsync<
   TAccountAuthority extends string,
   TAccountFractionConfig extends string,
-  TAccountTreasury extends string,
-  TAccountTreasuryMint extends string,
-  TAccountBotTokenAccount extends string,
   TAccountParticipantBalance0 extends string,
   TAccountParticipantBalance1 extends string,
   TAccountParticipantBalance2 extends string,
   TAccountParticipantBalance3 extends string,
   TAccountParticipantBalance4 extends string,
   TAccountBotBalance extends string,
-  TAccountTokenProgram extends string,
+  TAccountSystemProgram extends string,
   TProgramAddress extends Address = typeof FRACTION_PROGRAM_ADDRESS,
 >(
-  input: ClaimAndDistributeAsyncInput<
-    TAccountBot,
+  input: InitializeFractionAsyncInput<
     TAccountAuthority,
     TAccountFractionConfig,
-    TAccountTreasury,
-    TAccountTreasuryMint,
-    TAccountBotTokenAccount,
     TAccountParticipantBalance0,
     TAccountParticipantBalance1,
     TAccountParticipantBalance2,
     TAccountParticipantBalance3,
     TAccountParticipantBalance4,
     TAccountBotBalance,
-    TAccountTokenProgram
+    TAccountSystemProgram
   >,
   config?: { programAddress?: TProgramAddress }
 ): Promise<
-  ClaimAndDistributeInstruction<
+  InitializeFractionInstruction<
     TProgramAddress,
-    TAccountBot,
     TAccountAuthority,
     TAccountFractionConfig,
-    TAccountTreasury,
-    TAccountTreasuryMint,
-    TAccountBotTokenAccount,
     TAccountParticipantBalance0,
     TAccountParticipantBalance1,
     TAccountParticipantBalance2,
     TAccountParticipantBalance3,
     TAccountParticipantBalance4,
     TAccountBotBalance,
-    TAccountTokenProgram
+    TAccountSystemProgram
   >
 > {
   // Program address.
@@ -239,12 +252,8 @@ export async function getClaimAndDistributeInstructionAsync<
 
   // Original accounts.
   const originalAccounts = {
-    bot: { value: input.bot ?? null, isWritable: false },
-    authority: { value: input.authority ?? null, isWritable: false },
+    authority: { value: input.authority ?? null, isWritable: true },
     fractionConfig: { value: input.fractionConfig ?? null, isWritable: true },
-    treasury: { value: input.treasury ?? null, isWritable: true },
-    treasuryMint: { value: input.treasuryMint ?? null, isWritable: false },
-    botTokenAccount: { value: input.botTokenAccount ?? null, isWritable: true },
     participantBalance0: {
       value: input.participantBalance0 ?? null,
       isWritable: true,
@@ -266,7 +275,7 @@ export async function getClaimAndDistributeInstructionAsync<
       isWritable: true,
     },
     botBalance: { value: input.botBalance ?? null, isWritable: true },
-    tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
+    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -294,16 +303,73 @@ export async function getClaimAndDistributeInstructionAsync<
       ],
     });
   }
-  if (!accounts.treasury.value) {
-    accounts.treasury.value = await getProgramDerivedAddress({
-      programAddress:
-        'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL' as Address<'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'>,
+  if (!accounts.participantBalance0.value) {
+    accounts.participantBalance0.value = await getProgramDerivedAddress({
+      programAddress,
       seeds: [
+        getBytesEncoder().encode(
+          new Uint8Array([98, 97, 108, 97, 110, 99, 101])
+        ),
         getAddressEncoder().encode(
           expectAddress(accounts.fractionConfig.value)
         ),
-        getAddressEncoder().encode(expectAddress(accounts.tokenProgram.value)),
-        getAddressEncoder().encode(expectAddress(accounts.treasuryMint.value)),
+        getAddressEncoder().encode(expectSome(args.participantWallet0)),
+      ],
+    });
+  }
+  if (!accounts.participantBalance1.value) {
+    accounts.participantBalance1.value = await getProgramDerivedAddress({
+      programAddress,
+      seeds: [
+        getBytesEncoder().encode(
+          new Uint8Array([98, 97, 108, 97, 110, 99, 101])
+        ),
+        getAddressEncoder().encode(
+          expectAddress(accounts.fractionConfig.value)
+        ),
+        getAddressEncoder().encode(expectSome(args.participantWallet1)),
+      ],
+    });
+  }
+  if (!accounts.participantBalance2.value) {
+    accounts.participantBalance2.value = await getProgramDerivedAddress({
+      programAddress,
+      seeds: [
+        getBytesEncoder().encode(
+          new Uint8Array([98, 97, 108, 97, 110, 99, 101])
+        ),
+        getAddressEncoder().encode(
+          expectAddress(accounts.fractionConfig.value)
+        ),
+        getAddressEncoder().encode(expectSome(args.participantWallet2)),
+      ],
+    });
+  }
+  if (!accounts.participantBalance3.value) {
+    accounts.participantBalance3.value = await getProgramDerivedAddress({
+      programAddress,
+      seeds: [
+        getBytesEncoder().encode(
+          new Uint8Array([98, 97, 108, 97, 110, 99, 101])
+        ),
+        getAddressEncoder().encode(
+          expectAddress(accounts.fractionConfig.value)
+        ),
+        getAddressEncoder().encode(expectSome(args.participantWallet3)),
+      ],
+    });
+  }
+  if (!accounts.participantBalance4.value) {
+    accounts.participantBalance4.value = await getProgramDerivedAddress({
+      programAddress,
+      seeds: [
+        getBytesEncoder().encode(
+          new Uint8Array([98, 97, 108, 97, 110, 99, 101])
+        ),
+        getAddressEncoder().encode(
+          expectAddress(accounts.fractionConfig.value)
+        ),
+        getAddressEncoder().encode(expectSome(args.participantWallet4)),
       ],
     });
   }
@@ -317,142 +383,121 @@ export async function getClaimAndDistributeInstructionAsync<
         getAddressEncoder().encode(
           expectAddress(accounts.fractionConfig.value)
         ),
-        getAddressEncoder().encode(expectAddress(accounts.bot.value)),
+        getAddressEncoder().encode(expectSome(args.botWallet)),
       ],
     });
+  }
+  if (!accounts.systemProgram.value) {
+    accounts.systemProgram.value =
+      '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
   }
 
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
     accounts: [
-      getAccountMeta(accounts.bot),
       getAccountMeta(accounts.authority),
       getAccountMeta(accounts.fractionConfig),
-      getAccountMeta(accounts.treasury),
-      getAccountMeta(accounts.treasuryMint),
-      getAccountMeta(accounts.botTokenAccount),
       getAccountMeta(accounts.participantBalance0),
       getAccountMeta(accounts.participantBalance1),
       getAccountMeta(accounts.participantBalance2),
       getAccountMeta(accounts.participantBalance3),
       getAccountMeta(accounts.participantBalance4),
       getAccountMeta(accounts.botBalance),
-      getAccountMeta(accounts.tokenProgram),
+      getAccountMeta(accounts.systemProgram),
     ],
     programAddress,
-    data: getClaimAndDistributeInstructionDataEncoder().encode(
-      args as ClaimAndDistributeInstructionDataArgs
+    data: getInitializeFractionInstructionDataEncoder().encode(
+      args as InitializeFractionInstructionDataArgs
     ),
-  } as ClaimAndDistributeInstruction<
+  } as InitializeFractionInstruction<
     TProgramAddress,
-    TAccountBot,
     TAccountAuthority,
     TAccountFractionConfig,
-    TAccountTreasury,
-    TAccountTreasuryMint,
-    TAccountBotTokenAccount,
     TAccountParticipantBalance0,
     TAccountParticipantBalance1,
     TAccountParticipantBalance2,
     TAccountParticipantBalance3,
     TAccountParticipantBalance4,
     TAccountBotBalance,
-    TAccountTokenProgram
+    TAccountSystemProgram
   >;
 
   return instruction;
 }
 
-export type ClaimAndDistributeInput<
-  TAccountBot extends string = string,
+export type InitializeFractionInput<
   TAccountAuthority extends string = string,
   TAccountFractionConfig extends string = string,
-  TAccountTreasury extends string = string,
-  TAccountTreasuryMint extends string = string,
-  TAccountBotTokenAccount extends string = string,
   TAccountParticipantBalance0 extends string = string,
   TAccountParticipantBalance1 extends string = string,
   TAccountParticipantBalance2 extends string = string,
   TAccountParticipantBalance3 extends string = string,
   TAccountParticipantBalance4 extends string = string,
   TAccountBotBalance extends string = string,
-  TAccountTokenProgram extends string = string,
+  TAccountSystemProgram extends string = string,
 > = {
-  bot: TransactionSigner<TAccountBot>;
-  authority: Address<TAccountAuthority>;
+  authority: TransactionSigner<TAccountAuthority>;
   fractionConfig: Address<TAccountFractionConfig>;
-  treasury: Address<TAccountTreasury>;
-  treasuryMint: Address<TAccountTreasuryMint>;
-  botTokenAccount: Address<TAccountBotTokenAccount>;
   participantBalance0: Address<TAccountParticipantBalance0>;
   participantBalance1: Address<TAccountParticipantBalance1>;
   participantBalance2: Address<TAccountParticipantBalance2>;
   participantBalance3: Address<TAccountParticipantBalance3>;
   participantBalance4: Address<TAccountParticipantBalance4>;
   botBalance: Address<TAccountBotBalance>;
-  tokenProgram: Address<TAccountTokenProgram>;
-  name: ClaimAndDistributeInstructionDataArgs['name'];
+  systemProgram?: Address<TAccountSystemProgram>;
+  name: InitializeFractionInstructionDataArgs['name'];
+  participants: InitializeFractionInstructionDataArgs['participants'];
+  botWallet: InitializeFractionInstructionDataArgs['botWallet'];
+  participantWallet0: InitializeFractionInstructionDataArgs['participantWallet0'];
+  participantWallet1: InitializeFractionInstructionDataArgs['participantWallet1'];
+  participantWallet2: InitializeFractionInstructionDataArgs['participantWallet2'];
+  participantWallet3: InitializeFractionInstructionDataArgs['participantWallet3'];
+  participantWallet4: InitializeFractionInstructionDataArgs['participantWallet4'];
 };
 
-export function getClaimAndDistributeInstruction<
-  TAccountBot extends string,
+export function getInitializeFractionInstruction<
   TAccountAuthority extends string,
   TAccountFractionConfig extends string,
-  TAccountTreasury extends string,
-  TAccountTreasuryMint extends string,
-  TAccountBotTokenAccount extends string,
   TAccountParticipantBalance0 extends string,
   TAccountParticipantBalance1 extends string,
   TAccountParticipantBalance2 extends string,
   TAccountParticipantBalance3 extends string,
   TAccountParticipantBalance4 extends string,
   TAccountBotBalance extends string,
-  TAccountTokenProgram extends string,
+  TAccountSystemProgram extends string,
   TProgramAddress extends Address = typeof FRACTION_PROGRAM_ADDRESS,
 >(
-  input: ClaimAndDistributeInput<
-    TAccountBot,
+  input: InitializeFractionInput<
     TAccountAuthority,
     TAccountFractionConfig,
-    TAccountTreasury,
-    TAccountTreasuryMint,
-    TAccountBotTokenAccount,
     TAccountParticipantBalance0,
     TAccountParticipantBalance1,
     TAccountParticipantBalance2,
     TAccountParticipantBalance3,
     TAccountParticipantBalance4,
     TAccountBotBalance,
-    TAccountTokenProgram
+    TAccountSystemProgram
   >,
   config?: { programAddress?: TProgramAddress }
-): ClaimAndDistributeInstruction<
+): InitializeFractionInstruction<
   TProgramAddress,
-  TAccountBot,
   TAccountAuthority,
   TAccountFractionConfig,
-  TAccountTreasury,
-  TAccountTreasuryMint,
-  TAccountBotTokenAccount,
   TAccountParticipantBalance0,
   TAccountParticipantBalance1,
   TAccountParticipantBalance2,
   TAccountParticipantBalance3,
   TAccountParticipantBalance4,
   TAccountBotBalance,
-  TAccountTokenProgram
+  TAccountSystemProgram
 > {
   // Program address.
   const programAddress = config?.programAddress ?? FRACTION_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
-    bot: { value: input.bot ?? null, isWritable: false },
-    authority: { value: input.authority ?? null, isWritable: false },
+    authority: { value: input.authority ?? null, isWritable: true },
     fractionConfig: { value: input.fractionConfig ?? null, isWritable: true },
-    treasury: { value: input.treasury ?? null, isWritable: true },
-    treasuryMint: { value: input.treasuryMint ?? null, isWritable: false },
-    botTokenAccount: { value: input.botTokenAccount ?? null, isWritable: true },
     participantBalance0: {
       value: input.participantBalance0 ?? null,
       isWritable: true,
@@ -474,7 +519,7 @@ export function getClaimAndDistributeInstruction<
       isWritable: true,
     },
     botBalance: { value: input.botBalance ?? null, isWritable: true },
-    tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
+    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -484,79 +529,73 @@ export function getClaimAndDistributeInstruction<
   // Original args.
   const args = { ...input };
 
+  // Resolve default values.
+  if (!accounts.systemProgram.value) {
+    accounts.systemProgram.value =
+      '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
+  }
+
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
     accounts: [
-      getAccountMeta(accounts.bot),
       getAccountMeta(accounts.authority),
       getAccountMeta(accounts.fractionConfig),
-      getAccountMeta(accounts.treasury),
-      getAccountMeta(accounts.treasuryMint),
-      getAccountMeta(accounts.botTokenAccount),
       getAccountMeta(accounts.participantBalance0),
       getAccountMeta(accounts.participantBalance1),
       getAccountMeta(accounts.participantBalance2),
       getAccountMeta(accounts.participantBalance3),
       getAccountMeta(accounts.participantBalance4),
       getAccountMeta(accounts.botBalance),
-      getAccountMeta(accounts.tokenProgram),
+      getAccountMeta(accounts.systemProgram),
     ],
     programAddress,
-    data: getClaimAndDistributeInstructionDataEncoder().encode(
-      args as ClaimAndDistributeInstructionDataArgs
+    data: getInitializeFractionInstructionDataEncoder().encode(
+      args as InitializeFractionInstructionDataArgs
     ),
-  } as ClaimAndDistributeInstruction<
+  } as InitializeFractionInstruction<
     TProgramAddress,
-    TAccountBot,
     TAccountAuthority,
     TAccountFractionConfig,
-    TAccountTreasury,
-    TAccountTreasuryMint,
-    TAccountBotTokenAccount,
     TAccountParticipantBalance0,
     TAccountParticipantBalance1,
     TAccountParticipantBalance2,
     TAccountParticipantBalance3,
     TAccountParticipantBalance4,
     TAccountBotBalance,
-    TAccountTokenProgram
+    TAccountSystemProgram
   >;
 
   return instruction;
 }
 
-export type ParsedClaimAndDistributeInstruction<
+export type ParsedInitializeFractionInstruction<
   TProgram extends string = typeof FRACTION_PROGRAM_ADDRESS,
   TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
 > = {
   programAddress: Address<TProgram>;
   accounts: {
-    bot: TAccountMetas[0];
-    authority: TAccountMetas[1];
-    fractionConfig: TAccountMetas[2];
-    treasury: TAccountMetas[3];
-    treasuryMint: TAccountMetas[4];
-    botTokenAccount: TAccountMetas[5];
-    participantBalance0: TAccountMetas[6];
-    participantBalance1: TAccountMetas[7];
-    participantBalance2: TAccountMetas[8];
-    participantBalance3: TAccountMetas[9];
-    participantBalance4: TAccountMetas[10];
-    botBalance: TAccountMetas[11];
-    tokenProgram: TAccountMetas[12];
+    authority: TAccountMetas[0];
+    fractionConfig: TAccountMetas[1];
+    participantBalance0: TAccountMetas[2];
+    participantBalance1: TAccountMetas[3];
+    participantBalance2: TAccountMetas[4];
+    participantBalance3: TAccountMetas[5];
+    participantBalance4: TAccountMetas[6];
+    botBalance: TAccountMetas[7];
+    systemProgram: TAccountMetas[8];
   };
-  data: ClaimAndDistributeInstructionData;
+  data: InitializeFractionInstructionData;
 };
 
-export function parseClaimAndDistributeInstruction<
+export function parseInitializeFractionInstruction<
   TProgram extends string,
   TAccountMetas extends readonly AccountMeta[],
 >(
   instruction: Instruction<TProgram> &
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
-): ParsedClaimAndDistributeInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 13) {
+): ParsedInitializeFractionInstruction<TProgram, TAccountMetas> {
+  if (instruction.accounts.length < 9) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -569,21 +608,17 @@ export function parseClaimAndDistributeInstruction<
   return {
     programAddress: instruction.programAddress,
     accounts: {
-      bot: getNextAccount(),
       authority: getNextAccount(),
       fractionConfig: getNextAccount(),
-      treasury: getNextAccount(),
-      treasuryMint: getNextAccount(),
-      botTokenAccount: getNextAccount(),
       participantBalance0: getNextAccount(),
       participantBalance1: getNextAccount(),
       participantBalance2: getNextAccount(),
       participantBalance3: getNextAccount(),
       participantBalance4: getNextAccount(),
       botBalance: getNextAccount(),
-      tokenProgram: getNextAccount(),
+      systemProgram: getNextAccount(),
     },
-    data: getClaimAndDistributeInstructionDataDecoder().decode(
+    data: getInitializeFractionInstructionDataDecoder().decode(
       instruction.data
     ),
   };

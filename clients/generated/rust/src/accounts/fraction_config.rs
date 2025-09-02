@@ -6,26 +6,29 @@
 //!
 
 use solana_pubkey::Pubkey;
+use crate::generated::types::Participant;
 use borsh::BorshSerialize;
 use borsh::BorshDeserialize;
 
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ParticipantBalance {
+pub struct FractionConfig {
 pub discriminator: [u8; 8],
 #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::DisplayFromStr>"))]
-pub fraction: Pubkey,
+pub authority: Pubkey,
+pub name: String,
+pub participants: [Participant; 5],
 #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::DisplayFromStr>"))]
-pub participant: Pubkey,
-pub amount: u64,
+pub bot_wallet: Pubkey,
+pub incentive_bps: u8,
 pub bump: u8,
 }
 
 
-pub const PARTICIPANT_BALANCE_DISCRIMINATOR: [u8; 8] = [142, 219, 111, 115, 231, 38, 160, 173];
+pub const FRACTION_CONFIG_DISCRIMINATOR: [u8; 8] = [164, 123, 52, 71, 72, 174, 132, 174];
 
-impl ParticipantBalance {
+impl FractionConfig {
   
   
   
@@ -36,7 +39,7 @@ impl ParticipantBalance {
   }
 }
 
-impl<'a> TryFrom<&solana_account_info::AccountInfo<'a>> for ParticipantBalance {
+impl<'a> TryFrom<&solana_account_info::AccountInfo<'a>> for FractionConfig {
   type Error = std::io::Error;
 
   fn try_from(account_info: &solana_account_info::AccountInfo<'a>) -> Result<Self, Self::Error> {
@@ -46,53 +49,53 @@ impl<'a> TryFrom<&solana_account_info::AccountInfo<'a>> for ParticipantBalance {
 }
 
 #[cfg(feature = "fetch")]
-pub fn fetch_participant_balance(
+pub fn fetch_fraction_config(
   rpc: &solana_client::rpc_client::RpcClient,
   address: &solana_pubkey::Pubkey,
-) -> Result<crate::shared::DecodedAccount<ParticipantBalance>, std::io::Error> {
-  let accounts = fetch_all_participant_balance(rpc, &[*address])?;
+) -> Result<crate::shared::DecodedAccount<FractionConfig>, std::io::Error> {
+  let accounts = fetch_all_fraction_config(rpc, &[*address])?;
   Ok(accounts[0].clone())
 }
 
 #[cfg(feature = "fetch")]
-pub fn fetch_all_participant_balance(
+pub fn fetch_all_fraction_config(
   rpc: &solana_client::rpc_client::RpcClient,
   addresses: &[solana_pubkey::Pubkey],
-) -> Result<Vec<crate::shared::DecodedAccount<ParticipantBalance>>, std::io::Error> {
+) -> Result<Vec<crate::shared::DecodedAccount<FractionConfig>>, std::io::Error> {
     let accounts = rpc.get_multiple_accounts(addresses)
       .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
-    let mut decoded_accounts: Vec<crate::shared::DecodedAccount<ParticipantBalance>> = Vec::new();
+    let mut decoded_accounts: Vec<crate::shared::DecodedAccount<FractionConfig>> = Vec::new();
     for i in 0..addresses.len() {
       let address = addresses[i];
       let account = accounts[i].as_ref()
         .ok_or(std::io::Error::new(std::io::ErrorKind::Other, format!("Account not found: {}", address)))?;
-      let data = ParticipantBalance::from_bytes(&account.data)?;
+      let data = FractionConfig::from_bytes(&account.data)?;
       decoded_accounts.push(crate::shared::DecodedAccount { address, account: account.clone(), data });
     }
     Ok(decoded_accounts)
 }
 
 #[cfg(feature = "fetch")]
-pub fn fetch_maybe_participant_balance(
+pub fn fetch_maybe_fraction_config(
   rpc: &solana_client::rpc_client::RpcClient,
   address: &solana_pubkey::Pubkey,
-) -> Result<crate::shared::MaybeAccount<ParticipantBalance>, std::io::Error> {
-    let accounts = fetch_all_maybe_participant_balance(rpc, &[*address])?;
+) -> Result<crate::shared::MaybeAccount<FractionConfig>, std::io::Error> {
+    let accounts = fetch_all_maybe_fraction_config(rpc, &[*address])?;
     Ok(accounts[0].clone())
 }
 
 #[cfg(feature = "fetch")]
-pub fn fetch_all_maybe_participant_balance(
+pub fn fetch_all_maybe_fraction_config(
   rpc: &solana_client::rpc_client::RpcClient,
   addresses: &[solana_pubkey::Pubkey],
-) -> Result<Vec<crate::shared::MaybeAccount<ParticipantBalance>>, std::io::Error> {
+) -> Result<Vec<crate::shared::MaybeAccount<FractionConfig>>, std::io::Error> {
     let accounts = rpc.get_multiple_accounts(addresses)
       .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
-    let mut decoded_accounts: Vec<crate::shared::MaybeAccount<ParticipantBalance>> = Vec::new();
+    let mut decoded_accounts: Vec<crate::shared::MaybeAccount<FractionConfig>> = Vec::new();
     for i in 0..addresses.len() {
       let address = addresses[i];
       if let Some(account) = accounts[i].as_ref() {
-        let data = ParticipantBalance::from_bytes(&account.data)?;
+        let data = FractionConfig::from_bytes(&account.data)?;
         decoded_accounts.push(crate::shared::MaybeAccount::Exists(crate::shared::DecodedAccount { address, account: account.clone(), data }));
       } else {
         decoded_accounts.push(crate::shared::MaybeAccount::NotFound(address));
@@ -102,28 +105,28 @@ pub fn fetch_all_maybe_participant_balance(
 }
 
   #[cfg(feature = "anchor")]
-  impl anchor_lang::AccountDeserialize for ParticipantBalance {
+  impl anchor_lang::AccountDeserialize for FractionConfig {
       fn try_deserialize_unchecked(buf: &mut &[u8]) -> anchor_lang::Result<Self> {
         Ok(Self::deserialize(buf)?)
       }
   }
 
   #[cfg(feature = "anchor")]
-  impl anchor_lang::AccountSerialize for ParticipantBalance {}
+  impl anchor_lang::AccountSerialize for FractionConfig {}
 
   #[cfg(feature = "anchor")]
-  impl anchor_lang::Owner for ParticipantBalance {
+  impl anchor_lang::Owner for FractionConfig {
       fn owner() -> Pubkey {
         crate::FRACTION_ID
       }
   }
 
   #[cfg(feature = "anchor-idl-build")]
-  impl anchor_lang::IdlBuild for ParticipantBalance {}
+  impl anchor_lang::IdlBuild for FractionConfig {}
 
   
   #[cfg(feature = "anchor-idl-build")]
-  impl anchor_lang::Discriminator for ParticipantBalance {
+  impl anchor_lang::Discriminator for FractionConfig {
     const DISCRIMINATOR: &[u8] = &[0; 8];
   }
 

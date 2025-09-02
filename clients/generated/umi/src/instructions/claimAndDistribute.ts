@@ -34,7 +34,7 @@ import {
 export type ClaimAndDistributeInstructionAccounts = {
   bot: Signer;
   authority: PublicKey | Pda;
-  splitterConfig?: PublicKey | Pda;
+  fractionConfig?: PublicKey | Pda;
   treasury?: PublicKey | Pda;
   treasuryMint: PublicKey | Pda;
   botTokenAccount: PublicKey | Pda;
@@ -93,7 +93,7 @@ export function claimAndDistribute(
 ): TransactionBuilder {
   // Program ID.
   const programId = context.programs.getPublicKey(
-    'splits',
+    'fraction',
     'FM9hKTFN98M2uo7zw2huAbx7vJTQpfgFuxr9rVCTt8UY'
   );
 
@@ -105,10 +105,10 @@ export function claimAndDistribute(
       isWritable: false as boolean,
       value: input.authority ?? null,
     },
-    splitterConfig: {
+    fractionConfig: {
       index: 2,
       isWritable: true as boolean,
-      value: input.splitterConfig ?? null,
+      value: input.fractionConfig ?? null,
     },
     treasury: {
       index: 3,
@@ -166,12 +166,11 @@ export function claimAndDistribute(
   const resolvedArgs: ClaimAndDistributeInstructionArgs = { ...input };
 
   // Default values.
-  if (!resolvedAccounts.splitterConfig.value) {
-    resolvedAccounts.splitterConfig.value = context.eddsa.findPda(programId, [
+  if (!resolvedAccounts.fractionConfig.value) {
+    resolvedAccounts.fractionConfig.value = context.eddsa.findPda(programId, [
       bytes().serialize(
         new Uint8Array([
-          115, 112, 108, 105, 116, 116, 101, 114, 95, 99, 111, 110, 102, 105,
-          103,
+          102, 114, 97, 99, 116, 105, 111, 110, 95, 99, 111, 110, 102, 105, 103,
         ])
       ),
       publicKeySerializer().serialize(
@@ -188,7 +187,7 @@ export function claimAndDistribute(
       ),
       [
         publicKeySerializer().serialize(
-          expectPublicKey(resolvedAccounts.splitterConfig.value)
+          expectPublicKey(resolvedAccounts.fractionConfig.value)
         ),
         publicKeySerializer().serialize(
           expectPublicKey(resolvedAccounts.tokenProgram.value)
@@ -205,7 +204,7 @@ export function claimAndDistribute(
         new Uint8Array([98, 111, 116, 95, 98, 97, 108, 97, 110, 99, 101])
       ),
       publicKeySerializer().serialize(
-        expectPublicKey(resolvedAccounts.splitterConfig.value)
+        expectPublicKey(resolvedAccounts.fractionConfig.value)
       ),
       publicKeySerializer().serialize(
         expectPublicKey(resolvedAccounts.bot.value)

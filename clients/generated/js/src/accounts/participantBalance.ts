@@ -51,14 +51,14 @@ export function getParticipantBalanceDiscriminatorBytes() {
 
 export type ParticipantBalance = {
   discriminator: ReadonlyUint8Array;
-  splitter: Address;
+  fraction: Address;
   participant: Address;
   amount: bigint;
   bump: number;
 };
 
 export type ParticipantBalanceArgs = {
-  splitter: Address;
+  fraction: Address;
   participant: Address;
   amount: number | bigint;
   bump: number;
@@ -68,7 +68,7 @@ export function getParticipantBalanceEncoder(): FixedSizeEncoder<ParticipantBala
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
-      ['splitter', getAddressEncoder()],
+      ['fraction', getAddressEncoder()],
       ['participant', getAddressEncoder()],
       ['amount', getU64Encoder()],
       ['bump', getU8Encoder()],
@@ -80,7 +80,7 @@ export function getParticipantBalanceEncoder(): FixedSizeEncoder<ParticipantBala
 export function getParticipantBalanceDecoder(): FixedSizeDecoder<ParticipantBalance> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
-    ['splitter', getAddressDecoder()],
+    ['fraction', getAddressDecoder()],
     ['participant', getAddressDecoder()],
     ['amount', getU64Decoder()],
     ['bump', getU8Decoder()],

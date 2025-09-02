@@ -6,5 +6,5 @@
  * @see https://github.com/codama-idl/codama
  */
 
+export * from './fractionConfig';
 export * from './participantBalance';
-export * from './splitterConfig';
