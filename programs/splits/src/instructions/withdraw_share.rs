@@ -13,15 +13,16 @@ pub struct WithdrawShare<'info> {
     pub authority: AccountInfo<'info>,
 
     #[account(
+        mut,
         seeds = [b"splitter_config", authority.key().as_ref(), name.as_ref()],
         bump,
         constraint = splitter_config.authority == authority.key() @ SplitsError::InvalidAuthority,
         constraint = splitter_config.name == name @ SplitsError::NameMismatch
     )]
-    pub splitter_config: Account<'info, SplitterConfig>,
+    pub splitter_config: Box<Account<'info, SplitterConfig>>,
 
-    #[account(mut, seeds = [b"balance", splitter_config.key().as_ref(), participant.key().as_ref()], bump)]
-    pub participant_balance: Account<'info, ParticipantBalance>,
+    #[account(mut, seeds = [b"balance", splitter_config.key().as_ref(), participant.key().as_ref()], bump = participant_balance.bump)]
+    pub participant_balance: Box<Account<'info, ParticipantBalance>>,
 
     #[account(mut, associated_token::mint = treasury_mint, associated_token::authority = splitter_config, associated_token::token_program = token_program)]
     pub treasury: InterfaceAccount<'info, TokenAccount>,

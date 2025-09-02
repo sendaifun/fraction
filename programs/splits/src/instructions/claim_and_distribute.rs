@@ -22,25 +22,25 @@ pub struct ClaimAndDistribute<'info> {
     )]
     pub splitter_config: Box<Account<'info, SplitterConfig>>,
 
-    #[account(mut)]
+    #[account(mut, associated_token::mint = treasury_mint, associated_token::authority = splitter_config, associated_token::token_program = token_program)]
     pub treasury: InterfaceAccount<'info, TokenAccount>,
     pub treasury_mint: InterfaceAccount<'info, Mint>,
 
     #[account(mut, constraint = bot_token_account.mint == treasury_mint.key())]
     pub bot_token_account: InterfaceAccount<'info, TokenAccount>,
 
-    #[account(mut, seeds = [b"balance", splitter_config.key().as_ref(), splitter_config.participants[0].wallet.as_ref()], bump)]
+    #[account(mut, seeds = [b"balance", splitter_config.key().as_ref(), splitter_config.participants[0].wallet.as_ref()], bump = participant_balance_0.bump)]
     pub participant_balance_0: Box<Account<'info, ParticipantBalance>>,
-    #[account(mut, seeds = [b"balance", splitter_config.key().as_ref(), splitter_config.participants[1].wallet.as_ref()], bump)]
+    #[account(mut, seeds = [b"balance", splitter_config.key().as_ref(), splitter_config.participants[1].wallet.as_ref()], bump = participant_balance_1.bump)]
     pub participant_balance_1: Box<Account<'info, ParticipantBalance>>,
-    #[account(mut, seeds = [b"balance", splitter_config.key().as_ref(), splitter_config.participants[2].wallet.as_ref()], bump)]
+    #[account(mut, seeds = [b"balance", splitter_config.key().as_ref(), splitter_config.participants[2].wallet.as_ref()], bump = participant_balance_2.bump)]
     pub participant_balance_2: Box<Account<'info, ParticipantBalance>>,
-    #[account(mut, seeds = [b"balance", splitter_config.key().as_ref(), splitter_config.participants[3].wallet.as_ref()], bump)]
+    #[account(mut, seeds = [b"balance", splitter_config.key().as_ref(), splitter_config.participants[3].wallet.as_ref()], bump = participant_balance_3.bump)]
     pub participant_balance_3: Box<Account<'info, ParticipantBalance>>,
-    #[account(mut, seeds = [b"balance", splitter_config.key().as_ref(), splitter_config.participants[4].wallet.as_ref()], bump)]
+    #[account(mut, seeds = [b"balance", splitter_config.key().as_ref(), splitter_config.participants[4].wallet.as_ref()], bump = participant_balance_4.bump)]
     pub participant_balance_4: Box<Account<'info, ParticipantBalance>>,
 
-    #[account(mut, seeds = [b"bot_balance", splitter_config.key().as_ref(), splitter_config.bot_wallet.as_ref()], bump)]
+    #[account(mut, seeds = [b"bot_balance", splitter_config.key().as_ref(), bot.key().as_ref()], bump = bot_balance.bump)]
     pub bot_balance: Box<Account<'info, ParticipantBalance>>,
 
     pub token_program: Interface<'info, TokenInterface>,

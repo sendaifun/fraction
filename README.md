@@ -2,22 +2,22 @@
 
 A secure, automated token distribution system built on Solana that splits funds among multiple participants with a fixed bot incentive.
 
-## 🌟 Overview
+## Overview
 
 Fraction is a Solana program that enables automated token distribution among multiple participants. Clients fund a shared treasury, and a designated bot triggers distribution where participants receive their allocated shares and the bot earns a fixed 2% incentive for managing the distribution.
 
-## ✨ Key Features
+## Key Features
 
-- **🔐 Secure Distribution**: Built with Anchor framework for maximum security
-- **🤖 Bot-Only Distribution**: Only designated bot wallet can trigger distributions
-- **📊 Flexible Shares**: Customizable participant share percentages (up to 5 participants)
-- **🎯 Fixed Bot Incentive**: Consistent 2% reward for distribution management
-- **🏦 Client-Managed Treasury**: Treasury creation and funding handled client-side
-- **💰 Immediate Bot Rewards**: Bot receives incentive tokens instantly upon distribution
-- **💸 Individual Withdrawals**: Participants can withdraw their allocated funds independently
-- **🔄 Multiple Rounds**: Treasury can be refunded for multiple distribution rounds
+- **Secure Distribution**: Built with Anchor framework for maximum security
+- **Bot-Only Distribution**: Only designated bot wallet can trigger distributions
+- **Flexible Shares**: Customizable participant share percentages (up to 5 participants)
+- **Fixed Bot Incentive**: Consistent 2% reward for distribution management
+- **Client-Managed Treasury**: Treasury creation and funding handled client-side
+- **Immediate Bot Rewards**: Bot receives incentive tokens instantly upon distribution
+- **Individual Withdrawals**: Participants can withdraw their allocated funds independently
+- **Multiple Rounds**: Treasury can be refunded for multiple distribution rounds
 
-## 🏗️ Architecture
+## Architecture
 
 ### Core Components
 
@@ -32,7 +32,7 @@ Fraction is a Solana program that enables automated token distribution among mul
 Client Creates Treasury → Client Funds Treasury → Bot Distributes (Bot: 2% immediate, Participants: 98% tracked) → Individual Withdrawals
 ```
 
-## 🚀 Instructions
+## Instructions
 
 ### 1. Initialize Splitter
 Creates a new splitter with participant configuration (authority only).
@@ -56,6 +56,7 @@ Modify participant shares and bot wallet (authority only).
 
 ```rust
 update_splitter(
+    name: String,
     participants: [Participant; 5],
     bot_wallet: Pubkey,
 )
@@ -65,7 +66,7 @@ update_splitter(
 Create treasury and fund it with tokens for distribution.
 
 ```typescript
-// Create treasury ATA (client-side)
+// Create treasury ATA (client-side) - MUST be owned by splitter config PDA
 const treasury = await getOrCreateAssociatedTokenAccount(
     connection, payer, mint, splitterConfigPda, true
 );
@@ -78,22 +79,24 @@ await transfer(connection, payer, userTokenAccount, treasury.address, authority,
 Trigger distribution of treasury funds (bot only).
 
 ```rust
-claim_and_distribute()
+claim_and_distribute(name: String)
 ```
 - Only the designated bot wallet can call this instruction
 - Bot receives 2% immediately, participants get balance records updated
 - Treasury funds are preserved for participant withdrawals
+- Treasury must be an associated token account owned by the splitter config PDA
 
 ### 5. Withdraw Share
 Individual participants withdraw their allocated tokens.
 
 ```rust
-withdraw_share()
+withdraw_share(name: String)
 ```
 - Each participant can withdraw their allocated amount from treasury
 - Participant balance record is reset to 0 after withdrawal
+- Treasury must be an associated token account owned by the splitter config PDA
 
-## 📊 Account Structure
+## Account Structure
 
 ### SplitterConfig
 ```rust
@@ -102,7 +105,6 @@ pub struct SplitterConfig {
     pub name: String,                    // Splitter identifier
     pub participants: [Participant; 5], // Fixed array of 5 participants
     pub bot_wallet: Pubkey,             // Bot wallet address
-    pub total_collected: u64,           // Temporary storage during distribution
     pub incentive_bps: u8,              // Fixed at 200 (2%)
     pub bump: u8,                       // PDA bump seed
 }
@@ -126,7 +128,7 @@ pub struct ParticipantBalance {
 }
 ```
 
-## 🔧 Development Setup
+## Development Setup
 
 ### Prerequisites
 - Rust 1.70+
@@ -162,14 +164,14 @@ anchor build
 anchor test
 ```
 
-## 🧪 Testing
+## Testing
 
 The project includes a comprehensive test suite with 8 test cases covering:
 
-- ✅ **Core Functionality** (4 tests): Initialize, update, distribute, withdraw
-- ✅ **Treasury Management** (2 tests): Client-side treasury creation and funding
-- ✅ **Security & Authorization** (1 test): Access control and validation
-- ✅ **Complete Lifecycle** (1 test): End-to-end flow with all participants
+- **Core Functionality** (4 tests): Initialize, update, distribute, withdraw
+- **Treasury Management** (2 tests): Client-side treasury creation and funding
+- **Security & Authorization** (1 test): Access control and validation
+- **Complete Lifecycle** (1 test): End-to-end flow with all participants
 
 **Test Results**: 8/8 passing (100% success rate)
 
@@ -180,7 +182,7 @@ anchor test
 
 All tests validate the complete lifecycle: initialization → treasury management → bot-triggered distribution → participant withdrawals.
 
-## 🔄 Complete Workflow
+## Complete Workflow
 
 ### Step-by-Step Process
 
@@ -212,7 +214,7 @@ All tests validate the complete lifecycle: initialization → treasury managemen
 - **Efficiency**: Single distribution updates all balances simultaneously
 - **Transparency**: All allocations are tracked on-chain
 
-## 📋 Usage Examples
+## Usage Examples
 
 ### TypeScript/JavaScript Client
 
@@ -269,9 +271,10 @@ await transfer(
 
 // Trigger distribution (bot only)
 await program.methods
-  .claimAndDistribute()
+  .claimAndDistribute("my-splitter")
   .accountsPartial({
     bot: botWallet.publicKey,
+    authority: authority.publicKey,
     splitterConfig: splitterConfigPda,
     treasury: treasury.address,
     treasuryMint: mintAddress,
@@ -288,10 +291,10 @@ await program.methods
 
 // Participant withdraws (individual call)
 await program.methods
-  .withdrawShare()
+  .withdrawShare("my-splitter")
   .accountsPartial({
-    authority: authority.publicKey,
     participant: participant1.publicKey,
+    authority: authority.publicKey,
     splitterConfig: splitterConfigPda,
     participantBalance: participantBalance0Pda,
     treasury: treasury.address,
@@ -302,15 +305,17 @@ await program.methods
   .rpc();
 ```
 
-## 🔒 Security Features
+## Security Features
 
 - **Access Control**: Authority-only updates, bot-only distributions
 - **PDA Security**: Proper seed validation for all accounts
 - **Token Safety**: Uses `transfer_checked` for all token operations
 - **Mathematical Precision**: Basis points system for accurate percentage calculations
 - **Account Validation**: Comprehensive constraint checking via Anchor
+- **Associated Token Accounts**: Treasury must be ATA owned by splitter config PDA
+- **Share Validation**: Participant shares must sum to exactly 10,000 BPS (100%)
 
-## 🎯 Use Cases
+## Use Cases
 
 - **Revenue Sharing**: Distribute project earnings among team members
 - **Staking Rewards**: Automated distribution of staking rewards
@@ -319,7 +324,7 @@ await program.methods
 - **Investment Pools**: Distribute returns to investors
 - **Gaming Rewards**: Distribute tournament prizes or in-game earnings
 
-## 🛠️ Configuration
+## Configuration
 
 ### Environment Variables
 ```bash
@@ -339,7 +344,7 @@ Fraction = "YOUR_PROGRAM_ID"
 - **Participants**: Exactly 5 participants required
 - **Basis Points**: 10,000 = 100%
 
-## 📊 Economics
+## Economics
 
 ### Fee Structure
 - **Bot Incentive**: 2% of total distributed amount
@@ -351,7 +356,7 @@ For 1,000,000 tokens distributed:
 - **Bot receives**: 20,000 tokens (2%)
 - **Participants split**: 980,000 tokens (98% according to their share percentages)
 
-## 🚀 Deployment
+## Deployment
 
 ### Local Development
 ```bash
@@ -380,13 +385,13 @@ solana config set --url mainnet-beta
 anchor deploy --provider.cluster mainnet-beta
 ```
 
-## 📚 Documentation
+## Documentation
 
 - [Anchor Documentation](https://anchor-lang.com/) - Framework documentation
 - [Solana Documentation](https://docs.solana.com/) - Platform documentation
 - [SPL Token Documentation](https://spl.solana.com/token) - Token program documentation
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -394,15 +399,15 @@ anchor deploy --provider.cluster mainnet-beta
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## ⚠️ Disclaimer
+## Disclaimer
 
 This software is provided "as is" without warranty. Users should conduct thorough testing and auditing before using in production. The developers are not responsible for any loss of funds.
 
-## 🙋‍♂️ Support
+## Support
 
 For questions, issues, or contributions:
 - Open an issue on GitHub
@@ -411,4 +416,4 @@ For questions, issues, or contributions:
 
 ---
 
-**Built with ❤️ for the Solana ecosystem**
+**Built with love for the Solana ecosystem**

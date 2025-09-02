@@ -1,10 +1,10 @@
 # Fraction - Project Flow Documentation
 
-## 🔄 Complete System Flow Overview
+## Complete System Flow Overview
 
 This document outlines the complete flow of the Fraction system, from initial setup to final fund distribution and withdrawal.
 
-## 📋 Flow Summary
+## Flow Summary
 
 ```
 1. Setup Phase
@@ -31,7 +31,7 @@ This document outlines the complete flow of the Fraction system, from initial se
 
 ---
 
-## 🚀 Phase 1: Setup Phase
+## Phase 1: Setup Phase
 
 ### 1.1 Initialize Splitter
 
@@ -68,7 +68,6 @@ SplitterConfig {
         { wallet: participant5, shareBps: 1000 }, // 10%
     ],
     botWallet: bot_wallet_pubkey,
-    totalCollected: 0, // Temporary during distribution
     incentiveBps: 200, // Fixed at 2%
     bump: pda_bump
 }
@@ -87,9 +86,10 @@ SplitterConfig {
 
 **What Happens**:
 1. **Validate Authority**: Ensure caller is the splitter authority
-2. **Update Participant Shares**: Modify individual participant percentages
-3. **Update Bot Wallet**: Change the bot wallet if needed
-4. **Preserve Incentive**: Bot incentive remains fixed at 2%
+2. **Validate Shares**: Ensure participant shares sum to exactly 10,000 BPS (100%)
+3. **Update Participant Shares**: Modify individual participant percentages
+4. **Update Bot Wallet**: Change the bot wallet if needed
+5. **Preserve Incentive**: Bot incentive remains fixed at 2%
 
 **Example Update**:
 ```rust
@@ -107,7 +107,7 @@ participants: [
 
 ---
 
-## 🏦 Phase 2: Treasury Management (Client-Side)
+## Phase 2: Treasury Management (Client-Side)
 
 ### 2.1 Create Treasury Account
 
@@ -117,6 +117,7 @@ participants: [
 1. **Create ATA**: Generate Associated Token Account for the treasury
 2. **Set Authority**: Treasury is owned by splitter_config PDA
 3. **Initialize Empty**: Treasury starts with 0 balance
+4. **Required Constraint**: Treasury must be an associated token account with proper mint and authority constraints
 
 **Client-Side Code**:
 ```typescript
@@ -159,7 +160,7 @@ Splitter config: unchanged
 
 ---
 
-## 🎯 Phase 3: Distribution Phase (Bot-Only)
+## Phase 3: Distribution Phase (Bot-Only)
 
 ### 3.1 Bot Triggers Distribution
 
@@ -170,6 +171,7 @@ Splitter config: unchanged
 - Caller must be the configured `bot_wallet`
 - All participant balance accounts must exist
 - Bot must sign the transaction
+- Treasury must be an associated token account owned by splitter config PDA
 
 ### 3.2 Calculate Distribution
 
@@ -225,9 +227,6 @@ Treasury (98%) → Stays in Treasury (for withdrawals)
 
 **State After Distribution**:
 ```rust
-// SplitterConfig
-total_collected: 0  // Reset
-
 // Bot Balance PDA
 amount: 20000       // Bot's earned incentive
 
@@ -247,7 +246,7 @@ balance: 980000  // Participant funds ready for withdrawal
 
 ---
 
-## 💸 Phase 4: Withdrawal Phase
+## Phase 4: Withdrawal Phase
 
 ### 4.1 Individual Participant Withdrawals
 
@@ -255,8 +254,9 @@ balance: 980000  // Participant funds ready for withdrawal
 
 **Prerequisites**:
 - Participant must have allocated balance > 0
-- Both participant and authority must sign
+- Participant must sign the transaction
 - Participant must provide correct balance PDA
+- Treasury must be an associated token account owned by splitter config PDA
 
 **What Happens**:
 1. **Validate Withdrawal**: Ensure participant has allocated funds > 0
@@ -300,7 +300,7 @@ Day 14: Participant 4 withdraws 147,000
 
 ---
 
-## 🔄 Complete Lifecycle Example
+## Complete Lifecycle Example
 
 ### Scenario: Revenue Sharing for a Project
 
@@ -359,15 +359,15 @@ Day 5: Member 4 withdraws 441 USDC
 
 ---
 
-## 🔒 Security Flow
+## Security Flow
 
 ### Access Control
 ```
 Initialize: Authority only
-Update: Authority only  
+Update: Authority only (with share validation)
 Treasury Management: Client-side (anyone)
 Distribute: Bot wallet only (with bot signature)
-Withdraw: Participant + Authority signatures
+Withdraw: Participant only (with participant signature)
 ```
 
 ### Validation Flow
@@ -377,6 +377,8 @@ Withdraw: Participant + Authority signatures
 3. Signatures: Ensure proper signing requirements
 4. Constraints: Check Anchor constraints (has_one, seeds, etc.)
 5. Mathematical: Verify calculations and overflow protection
+6. Share Validation: Ensure participant shares sum to 10,000 BPS
+7. Associated Token Accounts: Verify treasury ATA constraints
 ```
 
 ### Error Handling Flow
@@ -389,7 +391,7 @@ Withdraw: Participant + Authority signatures
 
 ---
 
-## 📊 Data Flow Summary
+## Data Flow Summary
 
 ### Input → Processing → Output
 
@@ -416,14 +418,14 @@ Output: Bot gets 2%, participants get balance records
 
 **Withdraw**:
 ```
-Input: Participant + Authority signatures
+Input: Participant signature
 Processing: Transfer from treasury + Reset balance
 Output: Participant tokens + Balance reset
 ```
 
 ---
 
-## 🎯 Key Flow Principles
+## Key Flow Principles
 
 1. **Atomic Operations**: Each instruction completes fully or fails completely
 2. **State Consistency**: All related accounts updated together
