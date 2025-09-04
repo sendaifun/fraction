@@ -65,15 +65,12 @@ export function getClaimAndDistributeInstructionDataSerializer(): Serializer<
   >(
     struct<ClaimAndDistributeInstructionData>(
       [
-        ['discriminator', bytes({ size: 8 })],
+        ['discriminator', bytes({ size: 1 })],
         ['name', string()],
       ],
       { description: 'ClaimAndDistributeInstructionData' }
     ),
-    (value) => ({
-      ...value,
-      discriminator: new Uint8Array([111, 147, 210, 144, 253, 16, 187, 238]),
-    })
+    (value) => ({ ...value, discriminator: new Uint8Array([3]) })
   ) as Serializer<
     ClaimAndDistributeInstructionDataArgs,
     ClaimAndDistributeInstructionData

@@ -10,7 +10,7 @@ use solana_pubkey::Pubkey;
 use borsh::BorshSerialize;
 use borsh::BorshDeserialize;
 
-pub const UPDATE_FRACTION_DISCRIMINATOR: [u8; 8] = [176, 173, 246, 104, 94, 102, 30, 180];
+pub const UPDATE_FRACTION_DISCRIMINATOR: [u8; 1] = [2];
 
 /// Accounts.
 #[derive(Debug)]
@@ -55,13 +55,13 @@ impl UpdateFraction {
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
  pub struct UpdateFractionInstructionData {
-            discriminator: [u8; 8],
+            discriminator: [u8; 1],
                         }
 
 impl UpdateFractionInstructionData {
   pub fn new() -> Self {
     Self {
-                        discriminator: [176, 173, 246, 104, 94, 102, 30, 180],
+                        discriminator: [2],
                                                             }
   }
 }

@@ -46,12 +46,10 @@ import {
   type ResolvedAccount,
 } from '../shared';
 
-export const CLAIM_AND_DISTRIBUTE_DISCRIMINATOR = new Uint8Array([
-  111, 147, 210, 144, 253, 16, 187, 238,
-]);
+export const CLAIM_AND_DISTRIBUTE_DISCRIMINATOR = new Uint8Array([3]);
 
 export function getClaimAndDistributeDiscriminatorBytes() {
-  return fixEncoderSize(getBytesEncoder(), 8).encode(
+  return fixEncoderSize(getBytesEncoder(), 1).encode(
     CLAIM_AND_DISTRIBUTE_DISCRIMINATOR
   );
 }
@@ -135,7 +133,7 @@ export type ClaimAndDistributeInstructionDataArgs = { name: string };
 export function getClaimAndDistributeInstructionDataEncoder(): Encoder<ClaimAndDistributeInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
-      ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
+      ['discriminator', fixEncoderSize(getBytesEncoder(), 1)],
       ['name', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
     ]),
     (value) => ({ ...value, discriminator: CLAIM_AND_DISTRIBUTE_DISCRIMINATOR })
@@ -144,7 +142,7 @@ export function getClaimAndDistributeInstructionDataEncoder(): Encoder<ClaimAndD
 
 export function getClaimAndDistributeInstructionDataDecoder(): Decoder<ClaimAndDistributeInstructionData> {
   return getStructDecoder([
-    ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
+    ['discriminator', fixDecoderSize(getBytesDecoder(), 1)],
     ['name', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
   ]);
 }

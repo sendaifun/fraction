@@ -55,12 +55,10 @@ import {
   type ParticipantArgs,
 } from '../types';
 
-export const INITIALIZE_FRACTION_DISCRIMINATOR = new Uint8Array([
-  159, 21, 140, 42, 52, 59, 103, 82,
-]);
+export const INITIALIZE_FRACTION_DISCRIMINATOR = new Uint8Array([1]);
 
 export function getInitializeFractionDiscriminatorBytes() {
-  return fixEncoderSize(getBytesEncoder(), 8).encode(
+  return fixEncoderSize(getBytesEncoder(), 1).encode(
     INITIALIZE_FRACTION_DISCRIMINATOR
   );
 }
@@ -107,7 +105,7 @@ export type InitializeFractionInstructionDataArgs = {
 export function getInitializeFractionInstructionDataEncoder(): Encoder<InitializeFractionInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
-      ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
+      ['discriminator', fixEncoderSize(getBytesEncoder(), 1)],
       ['name', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
       ['participants', getArrayEncoder(getParticipantEncoder(), { size: 5 })],
       ['botWallet', getAddressEncoder()],
@@ -118,7 +116,7 @@ export function getInitializeFractionInstructionDataEncoder(): Encoder<Initializ
 
 export function getInitializeFractionInstructionDataDecoder(): Decoder<InitializeFractionInstructionData> {
   return getStructDecoder([
-    ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
+    ['discriminator', fixDecoderSize(getBytesDecoder(), 1)],
     ['name', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
     ['participants', getArrayDecoder(getParticipantDecoder(), { size: 5 })],
     ['botWallet', getAddressDecoder()],

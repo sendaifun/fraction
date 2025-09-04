@@ -33,9 +33,7 @@ export function identifyFractionAccount(
   if (
     containsBytes(
       data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([164, 123, 52, 71, 72, 174, 132, 174])
-      ),
+      fixEncoderSize(getBytesEncoder(), 1).encode(new Uint8Array([1])),
       0
     )
   ) {
@@ -59,9 +57,7 @@ export function identifyFractionInstruction(
   if (
     containsBytes(
       data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([111, 147, 210, 144, 253, 16, 187, 238])
-      ),
+      fixEncoderSize(getBytesEncoder(), 1).encode(new Uint8Array([3])),
       0
     )
   ) {
@@ -70,9 +66,7 @@ export function identifyFractionInstruction(
   if (
     containsBytes(
       data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([159, 21, 140, 42, 52, 59, 103, 82])
-      ),
+      fixEncoderSize(getBytesEncoder(), 1).encode(new Uint8Array([1])),
       0
     )
   ) {
@@ -81,9 +75,7 @@ export function identifyFractionInstruction(
   if (
     containsBytes(
       data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([176, 173, 246, 104, 94, 102, 30, 180])
-      ),
+      fixEncoderSize(getBytesEncoder(), 1).encode(new Uint8Array([2])),
       0
     )
   ) {

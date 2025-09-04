@@ -48,12 +48,10 @@ import {
   type ParticipantArgs,
 } from '../types';
 
-export const UPDATE_FRACTION_DISCRIMINATOR = new Uint8Array([
-  176, 173, 246, 104, 94, 102, 30, 180,
-]);
+export const UPDATE_FRACTION_DISCRIMINATOR = new Uint8Array([2]);
 
 export function getUpdateFractionDiscriminatorBytes() {
-  return fixEncoderSize(getBytesEncoder(), 8).encode(
+  return fixEncoderSize(getBytesEncoder(), 1).encode(
     UPDATE_FRACTION_DISCRIMINATOR
   );
 }
@@ -94,7 +92,7 @@ export type UpdateFractionInstructionDataArgs = {
 export function getUpdateFractionInstructionDataEncoder(): Encoder<UpdateFractionInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
-      ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
+      ['discriminator', fixEncoderSize(getBytesEncoder(), 1)],
       ['name', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
       ['participants', getArrayEncoder(getParticipantEncoder(), { size: 5 })],
       ['botWallet', getAddressEncoder()],
@@ -105,7 +103,7 @@ export function getUpdateFractionInstructionDataEncoder(): Encoder<UpdateFractio
 
 export function getUpdateFractionInstructionDataDecoder(): Decoder<UpdateFractionInstructionData> {
   return getStructDecoder([
-    ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
+    ['discriminator', fixDecoderSize(getBytesDecoder(), 1)],
     ['name', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
     ['participants', getArrayDecoder(getParticipantDecoder(), { size: 5 })],
     ['botWallet', getAddressDecoder()],

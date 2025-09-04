@@ -67,7 +67,7 @@ export function getFractionConfigAccountDataSerializer(): Serializer<
   >(
     struct<FractionConfigAccountData>(
       [
-        ['discriminator', bytes({ size: 8 })],
+        ['discriminator', bytes({ size: 1 })],
         ['authority', publicKeySerializer()],
         ['name', string()],
         ['participants', array(getParticipantSerializer(), { size: 5 })],
@@ -77,10 +77,7 @@ export function getFractionConfigAccountDataSerializer(): Serializer<
       ],
       { description: 'FractionConfigAccountData' }
     ),
-    (value) => ({
-      ...value,
-      discriminator: new Uint8Array([164, 123, 52, 71, 72, 174, 132, 174]),
-    })
+    (value) => ({ ...value, discriminator: new Uint8Array([1]) })
   ) as Serializer<FractionConfigAccountDataArgs, FractionConfigAccountData>;
 }
 
@@ -166,9 +163,9 @@ export function getFractionConfigGpaBuilder(
       incentiveBps: number;
       bump: number;
     }>({
-      discriminator: [0, bytes({ size: 8 })],
-      authority: [8, publicKeySerializer()],
-      name: [40, string()],
+      discriminator: [0, bytes({ size: 1 })],
+      authority: [1, publicKeySerializer()],
+      name: [33, string()],
       participants: [null, array(getParticipantSerializer(), { size: 5 })],
       botWallet: [null, publicKeySerializer()],
       incentiveBps: [null, u8()],
@@ -177,8 +174,5 @@ export function getFractionConfigGpaBuilder(
     .deserializeUsing<FractionConfig>((account) =>
       deserializeFractionConfig(account)
     )
-    .whereField(
-      'discriminator',
-      new Uint8Array([164, 123, 52, 71, 72, 174, 132, 174])
-    );
+    .whereField('discriminator', new Uint8Array([1]));
 }

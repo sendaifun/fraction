@@ -14,7 +14,7 @@ use borsh::BorshDeserialize;
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct FractionConfig {
-pub discriminator: [u8; 8],
+pub discriminator: [u8; 1],
 #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::DisplayFromStr>"))]
 pub authority: Pubkey,
 pub name: String,
@@ -26,7 +26,7 @@ pub bump: u8,
 }
 
 
-pub const FRACTION_CONFIG_DISCRIMINATOR: [u8; 8] = [164, 123, 52, 71, 72, 174, 132, 174];
+pub const FRACTION_CONFIG_DISCRIMINATOR: [u8; 1] = [1];
 
 impl FractionConfig {
   

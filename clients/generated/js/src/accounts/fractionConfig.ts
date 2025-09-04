@@ -51,12 +51,10 @@ import {
   type ParticipantArgs,
 } from '../types';
 
-export const FRACTION_CONFIG_DISCRIMINATOR = new Uint8Array([
-  164, 123, 52, 71, 72, 174, 132, 174,
-]);
+export const FRACTION_CONFIG_DISCRIMINATOR = new Uint8Array([1]);
 
 export function getFractionConfigDiscriminatorBytes() {
-  return fixEncoderSize(getBytesEncoder(), 8).encode(
+  return fixEncoderSize(getBytesEncoder(), 1).encode(
     FRACTION_CONFIG_DISCRIMINATOR
   );
 }
@@ -83,7 +81,7 @@ export type FractionConfigArgs = {
 export function getFractionConfigEncoder(): Encoder<FractionConfigArgs> {
   return transformEncoder(
     getStructEncoder([
-      ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
+      ['discriminator', fixEncoderSize(getBytesEncoder(), 1)],
       ['authority', getAddressEncoder()],
       ['name', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
       ['participants', getArrayEncoder(getParticipantEncoder(), { size: 5 })],
@@ -97,7 +95,7 @@ export function getFractionConfigEncoder(): Encoder<FractionConfigArgs> {
 
 export function getFractionConfigDecoder(): Decoder<FractionConfig> {
   return getStructDecoder([
-    ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
+    ['discriminator', fixDecoderSize(getBytesDecoder(), 1)],
     ['authority', getAddressDecoder()],
     ['name', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
     ['participants', getArrayDecoder(getParticipantDecoder(), { size: 5 })],

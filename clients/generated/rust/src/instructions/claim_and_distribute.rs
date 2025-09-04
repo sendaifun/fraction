@@ -8,7 +8,7 @@
 use borsh::BorshSerialize;
 use borsh::BorshDeserialize;
 
-pub const CLAIM_AND_DISTRIBUTE_DISCRIMINATOR: [u8; 8] = [111, 147, 210, 144, 253, 16, 187, 238];
+pub const CLAIM_AND_DISTRIBUTE_DISCRIMINATOR: [u8; 1] = [3];
 
 /// Accounts.
 #[derive(Debug)]
@@ -123,13 +123,13 @@ impl ClaimAndDistribute {
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
  pub struct ClaimAndDistributeInstructionData {
-            discriminator: [u8; 8],
+            discriminator: [u8; 1],
             }
 
 impl ClaimAndDistributeInstructionData {
   pub fn new() -> Self {
     Self {
-                        discriminator: [111, 147, 210, 144, 253, 16, 187, 238],
+                        discriminator: [3],
                                 }
   }
 }

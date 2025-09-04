@@ -65,17 +65,14 @@ export function getUpdateFractionInstructionDataSerializer(): Serializer<
   >(
     struct<UpdateFractionInstructionData>(
       [
-        ['discriminator', bytes({ size: 8 })],
+        ['discriminator', bytes({ size: 1 })],
         ['name', string()],
         ['participants', array(getParticipantSerializer(), { size: 5 })],
         ['botWallet', publicKeySerializer()],
       ],
       { description: 'UpdateFractionInstructionData' }
     ),
-    (value) => ({
-      ...value,
-      discriminator: new Uint8Array([176, 173, 246, 104, 94, 102, 30, 180]),
-    })
+    (value) => ({ ...value, discriminator: new Uint8Array([2]) })
   ) as Serializer<
     UpdateFractionInstructionDataArgs,
     UpdateFractionInstructionData

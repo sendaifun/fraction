@@ -91,7 +91,14 @@ impl<'info> ClaimAndDistribute<'info> {
         ];
 
         for (i, participant_token_account) in participant_token_accounts.into_iter().enumerate() {
+            let participant_wallet = self.fraction_config.participants[i].wallet;
             let share_bps = self.fraction_config.participants[i].share_bps as u64;
+            
+            // Skip if participant wallet is the system program
+            if participant_wallet == anchor_lang::system_program::ID {
+                continue;
+            }
+            
             if share_bps > 0 {
                 let participant_share = participant_total
                     .checked_mul(share_bps)
