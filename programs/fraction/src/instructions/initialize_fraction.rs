@@ -7,7 +7,7 @@ pub struct InitializeFraction<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    #[account(init, payer = authority, space = FractionConfig::LEN, seeds = [b"fraction_config", authority.key().as_ref(), name.as_ref()], bump)]
+    #[account(init, payer = authority, space = 1 + FractionConfig::INIT_SPACE, seeds = [b"fraction_config", authority.key().as_ref(), name.as_ref()], bump)]
     pub fraction_config: Box<Account<'info, FractionConfig>>,
 
     pub system_program: Program<'info, System>,

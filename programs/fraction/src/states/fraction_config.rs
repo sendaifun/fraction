@@ -1,9 +1,11 @@
 use crate::states::participant::Participant;
 use anchor_lang::prelude::*;
 
-#[account]
+#[derive(InitSpace)]
+#[account(discriminator = 1)]
 pub struct FractionConfig {
     pub authority: Pubkey,
+    #[max_len(50)]
     pub name: String,
     pub participants: [Participant; 5],
     pub bot_wallet: Pubkey,
@@ -13,5 +15,4 @@ pub struct FractionConfig {
 
 impl FractionConfig {
     pub const MAX_NAME_LENGTH: usize = 50;
-    pub const LEN: usize = 8 + 32 + 4 + Self::MAX_NAME_LENGTH + (5 * Participant::LEN) + 32 + 1 + 1;
 }

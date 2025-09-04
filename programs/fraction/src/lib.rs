@@ -15,6 +15,7 @@ declare_id!("Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg");
 pub mod fraction {
     use super::*;
 
+    #[instruction(discriminator = 1)]
     pub fn initialize_fraction(
         ctx: Context<InitializeFraction>,
         name: String,
@@ -29,6 +30,7 @@ pub mod fraction {
         )
     }
 
+    #[instruction(discriminator = 2)]
     pub fn update_fraction(
         ctx: Context<UpdateFraction>,
         _name: String,
@@ -38,6 +40,7 @@ pub mod fraction {
         ctx.accounts.update_fraction(participants, bot_wallet)
     }
 
+    #[instruction(discriminator = 3)]
     pub fn claim_and_distribute(ctx: Context<ClaimAndDistribute>, _name: String) -> Result<()> {
         ctx.accounts.claim_and_distribute()
     }
