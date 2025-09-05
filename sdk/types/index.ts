@@ -9,7 +9,7 @@ export type CreatorFractionInputArgs = {
     participants: Participant[],
     authority: PublicKey,
     name?: string,
-    botWallet?: PublicKey,
+    botWallet: PublicKey,
 }
 
 export type UpdateFractionInputArgs = {

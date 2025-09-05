@@ -53,7 +53,7 @@ async function createFractionIx(input: CreatorFractionInputArgs) {
 async function createFraction(input: CreatorFractionInputArgs, connection?: Connection, payer?: PublicKey) {
     const ix = await createFractionIx(input)
 
-    if (connection) {
+    if (connection && payer) {
         const { blockhash } = await connection.getLatestBlockhash()
         const messageV0 = new TransactionMessage({
             payerKey: payer, // PublicKey of the fee payer

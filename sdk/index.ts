@@ -1,4 +1,89 @@
+import { CreatorFractionInputArgs, UpdateFractionInputArgs } from "./types"
+import { PublicKey } from "@solana/web3.js"
+import { createFraction, updateFraction, claimAndDistribute } from "./instructions"
+import { Connection } from "@solana/web3.js"
+import { getFractionsByParticipant, getFractionsByConfig, getFractionBalance } from "./state"
+
 export * from "./instructions"
 export * from "./state"
 export * from "./types"
 export * from "./shared"
+
+/**
+ * Fraction class
+ * This class is used to interact with the Fraction program
+ * @param rpc - The RPC endpoint to use for the connection, default is mainnet-beta solana rpc
+ * @param payer - The payer to use for the transaction
+ */
+export class Fraction {
+    public rpc?: string
+    private connection?: Connection
+    private payer?: PublicKey
+
+    /**
+     * Constructor
+     * @param rpc - The RPC endpoint to use for the connection
+     * @param payer - The payer to use for the transaction
+     */
+    constructor(rpc?: string, payer?: PublicKey) {
+        this.rpc = rpc || "https://api.mainnet-beta.solana.com"
+        this.connection = new Connection(this.rpc)
+        this.payer = payer
+    }
+
+    /**
+     * Create a fraction
+     * @param input - The input arguments for creating a fraction
+     * @returns The transaction
+     */
+    async createFraction(input: CreatorFractionInputArgs) {
+        return createFraction(input, this.connection, this.payer)
+    }
+
+    /**
+     * Update a fraction
+     * @param config - The config of the fraction
+     * @param input - The input arguments for updating a fraction
+     * @returns The transaction
+     */
+    async updateFraction(config: PublicKey, input: UpdateFractionInputArgs) {
+        return updateFraction(config, input, this.connection, this.payer)
+    }
+
+    /**
+     * Claim and distribute
+     * @param config - The config of the fraction
+     * @param mint - The mint of the token
+     * @returns The transaction
+     */
+    async claimAndDistribute(config: PublicKey, mint: PublicKey) {
+        return claimAndDistribute(config, mint, this.connection, this.payer)
+    }
+
+    /**
+     * Get fractions by participant
+     * @param participant - The participant to get the fractions for
+     * @returns The fractions
+     */
+    async getFractionsByParticipant(participant: PublicKey) {
+        return getFractionsByParticipant(participant)
+    }
+
+    /**
+     * Get fractions by config
+     * @param config - The config to get the fractions for
+     * @returns The fractions
+     */
+    async getFractionsByConfig(config: PublicKey) {
+        return getFractionsByConfig(config)
+    }
+
+    /**
+     * Get the balance of a fraction
+     * @param config - The config to get the balance for
+     * @returns The balance
+     */
+    async getFractionBalance(config: PublicKey) {
+        return getFractionBalance(config)
+    }
+}

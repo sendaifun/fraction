@@ -10,12 +10,17 @@ import { getFractionsByConfig } from "../state";
  */
 async function updateFractionIx(config: PublicKey, input: UpdateFractionInputArgs) {
 
-    const { participants, botWallet } = input;
+    const { participants } = input;
+    let botWallet = input.botWallet;
 
     const fraction = await getFractionsByConfig(config)
 
     if (!fraction) {
         throw new Error("Fraction not found")
+    }
+
+    if(!botWallet) {
+        botWallet = fraction.botWallet;
     }
 
     participants.forEach(participant => {
@@ -53,7 +58,7 @@ async function updateFractionIx(config: PublicKey, input: UpdateFractionInputArg
 async function updateFraction(config: PublicKey, input: UpdateFractionInputArgs, connection?: Connection, payer?: PublicKey) {
     const ix = await updateFractionIx(config, input)
 
-    if (connection) {
+    if (connection && payer) {
         const { blockhash } = await connection.getLatestBlockhash()
         const messageV0 = new TransactionMessage({
             payerKey: payer, // PublicKey of the fee payer

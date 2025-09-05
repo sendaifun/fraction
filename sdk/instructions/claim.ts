@@ -70,7 +70,7 @@ async function claimAndDistributeIx(config: PublicKey, mint: PublicKey) {
 async function claimAndDistribute(config: PublicKey, mint: PublicKey, connection?: Connection, payer?: PublicKey) {
     const ix = await claimAndDistributeIx(config, mint)
 
-    if (connection) {
+    if (connection && payer) {
         const { blockhash } = await connection.getLatestBlockhash()
         const messageV0 = new TransactionMessage({
             payerKey: payer, // PublicKey of the fee payer
