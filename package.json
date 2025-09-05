@@ -2,9 +2,7 @@
   "license": "ISC",
   "scripts": {
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
-    "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check",
-    "generate-clients": "tsx clients/generate-client.ts",
-    "example": "tsx clients/example.ts"
+    "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check"
   },
   "dependencies": {
     "@codama/nodes": "^1.3.3",
