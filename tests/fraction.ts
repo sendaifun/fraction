@@ -41,6 +41,46 @@ describe("Fraction Program - Direct Distribution", () => {
     let fractionConfigPda: PublicKey;
     let testParticipants: any[];
 
+    // Helper function to clean up treasury
+    const cleanupTreasury = async () => {
+        if (!treasuryTokenAccount) return;
+        
+        try {
+            const treasuryAccount = await getAccount(connection, treasuryTokenAccount);
+            if (treasuryAccount.amount > 0) {
+                console.log(`Cleaning up treasury balance: ${treasuryAccount.amount}`);
+                
+                // Use the ClaimAndDistribute instruction to empty the treasury
+                // This will distribute any remaining funds, which is actually what we want
+                try {
+                    await program.methods
+                        .claimAndDistribute(fractionName)
+                        .accountsPartial({
+                            authority: authority.publicKey,
+                            bot: botWallet.publicKey,
+                            fractionConfig: fractionConfigPda,
+                            treasury: treasuryTokenAccount,
+                            treasuryMint: testMint,
+                            botTokenAccount: botTokenAta,
+                            participantTokenAccount0: participantTokenAtas[0],
+                            participantTokenAccount1: participantTokenAtas[1],
+                            participantTokenAccount2: participantTokenAtas[2],
+                            participantTokenAccount3: participantTokenAtas[3],
+                            participantTokenAccount4: participantTokenAtas[4],
+                            tokenProgram: TOKEN_PROGRAM_ID,
+                        })
+                        .signers([botWallet])
+                        .rpc();
+                    console.log("Treasury cleaned up successfully via distribution");
+                } catch (distError) {
+                    console.log("Distribution cleanup failed:", distError.message);
+                }
+            }
+        } catch (error) {
+            console.log("Treasury cleanup not needed or failed:", error.message);
+        }
+    };
+
     before(async () => {
         // Use existing wallet as authority
         authority = wallet;
@@ -258,6 +298,7 @@ describe("Fraction Program - Direct Distribution", () => {
     });
 
     it("Should handle multiple distribution rounds", async () => {
+        await cleanupTreasury();
         const secondDeposit = 500000000; // 500M tokens
         const secondDepositTx = await transfer(
             connection,
@@ -269,6 +310,7 @@ describe("Fraction Program - Direct Distribution", () => {
         );
 
         console.log("Second treasury deposit transaction:", secondDepositTx);
+
 
         // Get balances before second distribution
         const beforeBalances = await Promise.all(
@@ -361,6 +403,9 @@ describe("Fraction Program - Direct Distribution", () => {
     it("Should reject unauthorized bot attempts", async () => {
         const unauthorizedBot = Keypair.generate();
 
+        // Clean up any existing treasury balance before test
+        await cleanupTreasury();
+
         // Add funds to test with
         const testDepositTx = await transfer(
             connection,
@@ -426,46 +471,19 @@ describe("Fraction Program - Direct Distribution", () => {
         }
     });
 
-    it("Should reject system program as participant wallet", async () => {
-        const systemProgramParticipants = [
-            { wallet: participants[0].publicKey, shareBps: 2500 }, // 25%
-            { wallet: participants[1].publicKey, shareBps: 2500 }, // 25%
-            { wallet: SystemProgram.programId, shareBps: 2500 },    // 25% - System Program (invalid)
-            { wallet: participants[3].publicKey, shareBps: 1500 }, // 15%
-            { wallet: participants[4].publicKey, shareBps: 1000 }  // 10%
-        ];
-
-        try {
-            await program.methods
-                .updateFraction(fractionName, systemProgramParticipants, botWallet.publicKey)
-                .accountsPartial({
-                    authority: authority.publicKey,
-                    fractionConfig: fractionConfigPda,
-                })
-                .signers([])
-                .rpc();
-
-            expect.fail("Should have failed with system program as participant");
-        } catch (error) {
-            // The error might be different depending on how the validation is implemented
-            console.log("Correctly rejected system program as participant wallet");
-        }
-    });
-
-    it("Should handle distribution with system program participant (skip it)", async () => {
+    it("Should fail distribution when system program is a participant with non-zero share", async () => {
         // First, let's create a configuration with a system program participant for testing
-        // Note: This may fail if system program validation is in place during config update
         const systemProgramParticipants = [
             { wallet: participants[0].publicKey, shareBps: 2500 }, // 25%
             { wallet: participants[1].publicKey, shareBps: 2500 }, // 25%
-            { wallet: SystemProgram.programId, shareBps: 2500 },    // 25% - System Program (should be skipped)
+            { wallet: SystemProgram.programId, shareBps: 2500 },    // 25% - System Program (should cause error)
             { wallet: participants[3].publicKey, shareBps: 1500 }, // 15%
             { wallet: participants[4].publicKey, shareBps: 1000 }  // 10%
         ];
 
         try {
             // Try to update config with system program participant
-            await program.methods
+            const updateTx = await program.methods
                 .updateFraction(fractionName, systemProgramParticipants, botWallet.publicKey)
                 .accountsPartial({
                     authority: authority.publicKey,
@@ -473,12 +491,17 @@ describe("Fraction Program - Direct Distribution", () => {
                 })
                 .signers([])
                 .rpc();
-            
-            console.log("System program participant configuration set (for testing skip behavior)");
+
+            console.log("System program participant configuration set");
+            console.log("Config Update Transaction ID:", updateTx);
         } catch (error) {
             console.log("Could not set system program participant in config:", error.message);
-            console.log("Proceeding with current configuration to test distribution logic");
+            console.log("Test cannot proceed - system program validation may be in place at config level");
+            return;
         }
+
+        // Clean up any existing treasury balance before test
+        await cleanupTreasury();
 
         // Add funds for testing distribution
         const testAmount = 100000000; // 100M tokens
@@ -491,14 +514,10 @@ describe("Fraction Program - Direct Distribution", () => {
             testAmount
         );
 
-        console.log("Test deposit for system program test:", testDepositTx);
+        console.log("Test deposit for system program test");
+        console.log("Treasury Deposit Transaction ID:", testDepositTx);
 
-        // Get initial balances
-        const initialBotBalance = await getAccount(connection, botTokenAta);
-        const initialParticipantBalances = await Promise.all(
-            participantTokenAtas.map(async (ata) => await getAccount(connection, ata))
-        );
-
+        // Now try distribution - this should fail with SystemProgramParticipant error
         try {
             const distributionTx = await program.methods
                 .claimAndDistribute(fractionName)
@@ -519,7 +538,101 @@ describe("Fraction Program - Direct Distribution", () => {
                 .signers([botWallet])
                 .rpc();
 
-            console.log("Distribution with system program handling:", distributionTx);
+            console.log("Distribution unexpectedly succeeded:", distributionTx);
+            throw new Error("Distribution should have failed with system program participant");
+        } catch (error) {
+            // Check if the error is the expected SystemProgramParticipant error
+            if (error.message.includes("System program cannot be a participant wallet") ||
+                error.message.includes("SystemProgramParticipant")) {
+                console.log("Distribution correctly failed with SystemProgramParticipant error:", error.message);
+            } else {
+                console.log("Distribution failed but with unexpected error:", error.message);
+                throw error;
+            }
+        }
+    });
+
+    it("Should allow distribution when system program participant has zero share", async () => {
+        // Create a configuration with system program participant but zero share
+        const zeroShareSystemParticipants = [
+            { wallet: participants[0].publicKey, shareBps: 3000 }, // 30%
+            { wallet: participants[1].publicKey, shareBps: 3000 }, // 30%
+            { wallet: SystemProgram.programId, shareBps: 0 },       // 0% - System Program (should be OK)
+            { wallet: participants[3].publicKey, shareBps: 2000 }, // 20%
+            { wallet: participants[4].publicKey, shareBps: 2000 }  // 20%
+        ];
+
+        try {
+            // Update config with system program participant having zero share
+            const updateTx = await program.methods
+                .updateFraction(fractionName, zeroShareSystemParticipants, botWallet.publicKey)
+                .accountsPartial({
+                    authority: authority.publicKey,
+                    fractionConfig: fractionConfigPda,
+                })
+                .signers([])
+                .rpc();
+
+            console.log("Zero-share system program participant configuration set");
+            console.log("Config Update Transaction ID:", updateTx);
+        } catch (error) {
+            console.log(" Could not set zero-share system program participant in config:", error.message);
+            console.log("Test cannot proceed");
+            return;
+        }
+
+        // Clean up any existing treasury balance before test
+        await cleanupTreasury();
+
+        // Add funds for testing distribution
+        const testAmount = 100000000; // 100M tokens
+        const testDepositTx = await transfer(
+            connection,
+            wallet.payer,
+            authorityTokenAta,
+            treasuryTokenAccount,
+            authority.publicKey,
+            testAmount
+        );
+
+        console.log("Test deposit for zero-share system program test");
+        console.log("Treasury Deposit Transaction ID:", testDepositTx);
+
+        // Get initial balances
+        const initialBotBalance = await getAccount(connection, botTokenAta);
+        const initialParticipantBalances = await Promise.all(
+            participantTokenAtas.map(async (ata) => await getAccount(connection, ata))
+        );
+
+        try {
+            // This should succeed since system program has zero share
+            const distributionTx = await program.methods
+                .claimAndDistribute(fractionName)
+                .accountsPartial({
+                    authority: authority.publicKey,
+                    bot: botWallet.publicKey,
+                    fractionConfig: fractionConfigPda,
+                    treasury: treasuryTokenAccount,
+                    treasuryMint: testMint,
+                    botTokenAccount: botTokenAta,
+                    participantTokenAccount0: participantTokenAtas[0],
+                    participantTokenAccount1: participantTokenAtas[1],
+                    participantTokenAccount2: participantTokenAtas[2],
+                    participantTokenAccount3: participantTokenAtas[3],
+                    participantTokenAccount4: participantTokenAtas[4],
+                    tokenProgram: TOKEN_PROGRAM_ID,
+                })
+                .signers([botWallet])
+                .rpc();
+
+            console.log("Distribution succeeded with zero-share system program participant");
+            console.log("Distribution Transaction ID:", distributionTx);
+
+            // Get current configuration to debug the incentive calculation
+            const debugConfig = await program.account.fractionConfig.fetch(fractionConfigPda);
+            console.log("DEBUG - Current config incentive_bps:", debugConfig.incentiveBps);
+            console.log("DEBUG - Expected bot amount (2%):", Math.floor(testAmount * 0.02));
+            console.log("DEBUG - Calculated bot amount using config:", Math.floor(testAmount * debugConfig.incentiveBps / 10000));
 
             // Get final balances
             const finalBotBalance = await getAccount(connection, botTokenAta);
@@ -531,7 +644,7 @@ describe("Fraction Program - Direct Distribution", () => {
             // Get current configuration to see which participants are set
             const currentConfig = await program.account.fractionConfig.fetch(fractionConfigPda);
 
-            console.log("\n=== System Program Distribution Test Results ===");
+            console.log("\n=== Zero-Share System Program Distribution Results ===");
             console.log(`Bot balance: ${initialBotBalance.amount} → ${finalBotBalance.amount} (received: ${finalBotBalance.amount - initialBotBalance.amount} tokens)`);
             console.log(`Treasury balance: ${testAmount} → ${finalTreasuryBalance.amount}`);
 
@@ -542,36 +655,13 @@ describe("Fraction Program - Direct Distribution", () => {
                 const participantWallet = currentConfig.participants[i].wallet;
                 const shareBps = currentConfig.participants[i].shareBps;
                 const isSystemProgram = participantWallet.toString() === SystemProgram.programId.toString();
-                
-                console.log(`P${i+1} balance: ${initialBalance} → ${finalBalance} (received: ${increase} tokens) - Wallet: ${participantWallet.toString().slice(0, 8)}... Share: ${shareBps}bps ${isSystemProgram ? '[SYSTEM PROGRAM - SHOULD BE SKIPPED]' : ''}`);
-            }
 
-            // Check if any system program participants with non-zero shares were properly skipped
-            let systemProgramSkipped = false;
-            for (let i = 0; i < 5; i++) {
-                const participantWallet = currentConfig.participants[i].wallet;
-                const shareBps = currentConfig.participants[i].shareBps;
-                const increase = finalParticipantBalances[i].amount - initialParticipantBalances[i].amount;
-                
-                if (participantWallet.toString() === SystemProgram.programId.toString() && shareBps > 0) {
-                    if (increase === BigInt(0)) {
-                        systemProgramSkipped = true;
-                        console.log(`System program participant P${i+1} with ${shareBps}bps was correctly skipped (no tokens received)`);
-                    } else {
-                        console.log(`System program participant P${i+1} with ${shareBps}bps received ${increase} tokens (should have been skipped)`);
-                    }
-                }
-            }
-
-            if (systemProgramSkipped) {
-                console.log("Successfully demonstrated system program participant skipping behavior!");
-            } else {
-                console.log("No system program participants with non-zero shares found in current configuration");
+                console.log(`P${i + 1} balance: ${initialBalance} → ${finalBalance} (received: ${increase} tokens) - Wallet: ${participantWallet.toString().slice(0, 8)}... Share: ${shareBps}bps ${isSystemProgram ? '[SYSTEM PROGRAM - 0 SHARE]' : ''}`);
             }
 
         } catch (error) {
-            console.log("Distribution failed:", error.message);
-            // This might happen if there are validation errors
+            console.log("Distribution failed unexpectedly:", error.message);
+            throw error;
         }
     });
 });

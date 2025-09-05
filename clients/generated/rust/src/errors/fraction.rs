@@ -46,6 +46,9 @@ pub enum FractionError {
     /// 6011 - Invalid bot wallet
     #[error("Invalid bot wallet")]
     InvalidBot = 0x177B,
+    /// 6012 - System program cannot be a participant wallet
+    #[error("System program cannot be a participant wallet")]
+    SystemProgramParticipant = 0x177C,
 }
 
 impl From<FractionError> for solana_program_error::ProgramError {

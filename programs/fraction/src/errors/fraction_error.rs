@@ -26,4 +26,6 @@ pub enum FractionError {
     NameMismatch,
     #[msg("Invalid bot wallet")]
     InvalidBot,
+    #[msg("System program cannot be a participant wallet")]
+    SystemProgramParticipant,
 }

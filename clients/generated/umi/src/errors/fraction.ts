@@ -182,6 +182,19 @@ export class InvalidBotError extends ProgramError {
 codeToErrorMap.set(0x177b, InvalidBotError);
 nameToErrorMap.set('InvalidBot', InvalidBotError);
 
+/** SystemProgramParticipant: System program cannot be a participant wallet */
+export class SystemProgramParticipantError extends ProgramError {
+  override readonly name: string = 'SystemProgramParticipant';
+
+  readonly code: number = 0x177c; // 6012
+
+  constructor(program: Program, cause?: Error) {
+    super('System program cannot be a participant wallet', program, cause);
+  }
+}
+codeToErrorMap.set(0x177c, SystemProgramParticipantError);
+nameToErrorMap.set('SystemProgramParticipant', SystemProgramParticipantError);
+
 /**
  * Attempts to resolve a custom program error from the provided error code.
  * @category Errors

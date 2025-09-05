@@ -94,9 +94,9 @@ impl<'info> ClaimAndDistribute<'info> {
             let participant_wallet = self.fraction_config.participants[i].wallet;
             let share_bps = self.fraction_config.participants[i].share_bps as u64;
             
-            // Skip if participant wallet is the system program AND has non-zero share
+            // Throw error if participant wallet is the system program AND has non-zero share
             if participant_wallet == anchor_lang::system_program::ID && share_bps > 0 {
-                continue;
+                return Err(FractionError::SystemProgramParticipant.into());
             }
             
             if share_bps > 0 {

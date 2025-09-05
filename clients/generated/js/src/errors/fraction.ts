@@ -38,6 +38,8 @@ export const FRACTION_ERROR__INVALID_AUTHORITY = 0x1779; // 6009
 export const FRACTION_ERROR__NAME_MISMATCH = 0x177a; // 6010
 /** InvalidBot: Invalid bot wallet */
 export const FRACTION_ERROR__INVALID_BOT = 0x177b; // 6011
+/** SystemProgramParticipant: System program cannot be a participant wallet */
+export const FRACTION_ERROR__SYSTEM_PROGRAM_PARTICIPANT = 0x177c; // 6012
 
 export type FractionError =
   | typeof FRACTION_ERROR__ARITHMETIC_OVERFLOW
@@ -51,6 +53,7 @@ export type FractionError =
   | typeof FRACTION_ERROR__NAME_TOO_LONG
   | typeof FRACTION_ERROR__NO_FUNDS_TO_DISTRIBUTE
   | typeof FRACTION_ERROR__PARTICIPANT_WALLET_MISMATCH
+  | typeof FRACTION_ERROR__SYSTEM_PROGRAM_PARTICIPANT
   | typeof FRACTION_ERROR__UNAUTHORIZED_WITHDRAWAL;
 
 let fractionErrorMessages: Record<FractionError, string> | undefined;
@@ -67,6 +70,7 @@ if (process.env.NODE_ENV !== 'production') {
     [FRACTION_ERROR__NAME_TOO_LONG]: `Name too long`,
     [FRACTION_ERROR__NO_FUNDS_TO_DISTRIBUTE]: `No funds to distribute`,
     [FRACTION_ERROR__PARTICIPANT_WALLET_MISMATCH]: `Participant wallet mismatch - individual wallet parameters must match participants array`,
+    [FRACTION_ERROR__SYSTEM_PROGRAM_PARTICIPANT]: `System program cannot be a participant wallet`,
     [FRACTION_ERROR__UNAUTHORIZED_WITHDRAWAL]: `Unauthorized withdrawal attempt`,
   };
 }
