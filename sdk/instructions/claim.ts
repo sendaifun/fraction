@@ -1,18 +1,20 @@
 import { Connection, PublicKey, SystemProgram, Transaction, TransactionMessage, VersionedTransaction } from "@solana/web3.js";
-import client, { programId } from "../shared/client";
+import  { programId } from "../shared/client";
 import { CreatorFractionInputArgs, UpdateFractionInputArgs } from "../types";
 import { getFractionsByConfig } from "../state";
 import { getAssociatedTokenAddressSync, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { Fraction } from "../shared/idl";
+import { Program } from "@coral-xyz/anchor";
 
 /**
  * Claim and distribute instruction
  * @param input - The input arguments for creating a fraction
  * @returns The instruction
  */
-async function claimAndDistributeIx(config: PublicKey, mint: PublicKey) {
+async function claimAndDistributeIx(program: Program<Fraction>, config: PublicKey, mint: PublicKey) {
 
 
-    const fraction = await getFractionsByConfig(config)
+    const fraction = await getFractionsByConfig(program, config)
 
     if (!fraction) {
         throw new Error("Fraction not found")
@@ -39,7 +41,7 @@ async function claimAndDistributeIx(config: PublicKey, mint: PublicKey) {
         true
     )
 
-    const ix = await client.methods.claimAndDistribute(
+    const ix = await program.methods.claimAndDistribute(
         fraction.name,
     ).accountsStrict({
         authority: fraction.authority,
@@ -67,8 +69,8 @@ async function claimAndDistributeIx(config: PublicKey, mint: PublicKey) {
  * @param payer - The payer for the transaction
  * @returns The transaction
  */
-async function claimAndDistribute(config: PublicKey, mint: PublicKey, connection?: Connection, payer?: PublicKey) {
-    const ix = await claimAndDistributeIx(config, mint)
+async function claimAndDistribute(program: Program<Fraction>, config: PublicKey, mint: PublicKey, connection?: Connection, payer?: PublicKey) {
+    const ix = await claimAndDistributeIx(program, config, mint)
 
     if (connection && payer) {
         const { blockhash } = await connection.getLatestBlockhash()

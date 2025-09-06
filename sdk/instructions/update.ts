@@ -1,19 +1,21 @@
 import { Connection, PublicKey, SystemProgram, Transaction, TransactionMessage, VersionedTransaction } from "@solana/web3.js";
-import client, { programId } from "../shared/client";
+import  { programId } from "../shared/client";
 import { CreatorFractionInputArgs, UpdateFractionInputArgs } from "../types";
 import { getFractionsByConfig } from "../state";
+import { Program } from "@coral-xyz/anchor";
+import { Fraction } from "../shared/idl";
 
 /**
  * Create a fraction instruction
  * @param input - The input arguments for creating a fraction
  * @returns The instruction
  */
-async function updateFractionIx(config: PublicKey, input: UpdateFractionInputArgs) {
+async function updateFractionIx(program: Program<Fraction>, config: PublicKey, input: UpdateFractionInputArgs) {
 
     const { participants } = input;
     let botWallet = input.botWallet;
 
-    const fraction = await getFractionsByConfig(config)
+    const fraction = await getFractionsByConfig(program, config)
 
     if (!fraction) {
         throw new Error("Fraction not found")
@@ -35,7 +37,7 @@ async function updateFractionIx(config: PublicKey, input: UpdateFractionInputArg
             throw new Error("Share cannot be greater than 10000")
     })
 
-    const ix = await client.methods.updateFraction(
+    const ix = await program.methods.updateFraction(
         fraction.name,
         participants,
         botWallet,
@@ -55,8 +57,8 @@ async function updateFractionIx(config: PublicKey, input: UpdateFractionInputArg
  * @param payer - The payer for the transaction
  * @returns The transaction
  */
-async function updateFraction(config: PublicKey, input: UpdateFractionInputArgs, connection?: Connection, payer?: PublicKey) {
-    const ix = await updateFractionIx(config, input)
+async function updateFraction(program: Program<Fraction>, config: PublicKey, input: UpdateFractionInputArgs, connection?: Connection, payer?: PublicKey) {
+    const ix = await updateFractionIx(program, config, input)
 
     if (connection && payer) {
         const { blockhash } = await connection.getLatestBlockhash()

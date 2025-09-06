@@ -14,7 +14,8 @@
       "skipLibCheck": true,
       "forceConsistentCasingInFileNames": true,
       "resolveJsonModule": true,
-      "allowSyntheticDefaultImports": true
+      "allowSyntheticDefaultImports": true,
+      "composite": true
     },
     "include": [
       "**/*.ts"
@@ -24,5 +25,8 @@
       "dist",
       "**/*.test.ts",
       "**/*.spec.ts"
+    ],
+    "references": [
+      { "path": "./test" }
     ]
   }

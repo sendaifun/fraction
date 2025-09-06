@@ -1,32 +1,42 @@
 {
-    "name": "@sendsplits/sdk",
-    "version": "1.0.0",
-    "description": "TypeScript SDK for SendSplits Solana program",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
-    "files": [
-      "dist/**/*",
-      "README.md"
-    ],
-    "scripts": {
-      "build": "tsc",
-      "build:watch": "tsc --watch",
-      "clean": "rm -rf dist",
-      "prepublishOnly": "pnpm run clean && pnpm run build"
-    },
-    "keywords": ["solana", "web3", "sdk", "revenue-sharing"],
-    "license": "MIT",
-    "dependencies": {
-      "@coral-xyz/anchor": "^0.31.1",
-      "@solana/web3.js": "^1.98.4",
-      "@solana/spl-token": "^0.4.13"
-    },
-    "devDependencies": {
-      "typescript": "^5.7.3",
-      "@types/node": "^24.3.0"
-    },
-    "peerDependencies": {
-      "@coral-xyz/anchor": ">=0.30.0",
-      "@solana/web3.js": ">=1.90.0"
-    }
+  "name": "@sendsplits/sdk",
+  "version": "1.0.0",
+  "description": "TypeScript SDK for SendSplits Solana program",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "pnpm run clean && pnpm run build",
+    "test": "jest test/*.test.ts"
+  },
+  "keywords": [
+    "solana",
+    "web3",
+    "sdk",
+    "revenue-sharing"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.31.1",
+    "@solana/spl-token": "^0.4.13",
+    "@solana/web3.js": "^1.98.4"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.3.0",
+    "chai": "^4.3.7",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.1",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "@coral-xyz/anchor": ">=0.30.0",
+    "@solana/web3.js": ">=1.90.0"
   }
+}

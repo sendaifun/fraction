@@ -1,13 +1,15 @@
 import { Connection, PublicKey, SystemProgram, Transaction, TransactionMessage, VersionedTransaction } from "@solana/web3.js";
-import client, { programId } from "../shared/client";
+import  { programId } from "../shared/client";
 import { CreatorFractionInputArgs } from "../types";
+import { Program } from "@coral-xyz/anchor";
+import { Fraction } from "../shared/idl";
 
 /**
  * Create a fraction instruction
  * @param input - The input arguments for creating a fraction
  * @returns The instruction
  */
-async function createFractionIx(input: CreatorFractionInputArgs) {
+async function createFractionIx(program: Program<Fraction>, input: CreatorFractionInputArgs) {
 
     const { participants, authority, name, botWallet } = input;
 
@@ -30,7 +32,7 @@ async function createFractionIx(input: CreatorFractionInputArgs) {
             throw new Error("Share cannot be greater than 10000")
     })
 
-    const ix = await client.methods.initializeFraction(
+    const ix = await program.methods.initializeFraction(
         fractionName,
         participants,
         botWallet,
@@ -50,8 +52,8 @@ async function createFractionIx(input: CreatorFractionInputArgs) {
  * @param payer - The payer for the transaction
  * @returns The transaction
  */
-async function createFraction(input: CreatorFractionInputArgs, connection?: Connection, payer?: PublicKey) {
-    const ix = await createFractionIx(input)
+async function createFraction(program: Program<Fraction>, input: CreatorFractionInputArgs, connection?: Connection, payer?: PublicKey) {
+    const ix = await createFractionIx(program, input)
 
     if (connection && payer) {
         const { blockhash } = await connection.getLatestBlockhash()
