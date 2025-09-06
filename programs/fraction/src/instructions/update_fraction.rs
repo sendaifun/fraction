@@ -2,17 +2,15 @@ use crate::{errors::*, states::*};
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
-#[instruction(name: String, participants: [Participant; 5], bot_wallet: Pubkey)]
+#[instruction(participants: [Participant; 5])]
 pub struct UpdateFraction<'info> {
     pub authority: Signer<'info>, 
 
     #[account(
         mut,
-        seeds = [b"fraction_config", authority.key().as_ref(), fraction_config.name.as_ref()],
+        seeds = [b"fraction_config", fraction_config.authority.key().as_ref(), fraction_config.name.as_ref()],
         bump = fraction_config.bump,   
-        constraint = fraction_config.authority == authority.key() @ FractionError::InvalidAuthority,
-        constraint = fraction_config.bot_wallet == bot_wallet @ FractionError::InvalidBot,
-        constraint = fraction_config.name == name @ FractionError::NameMismatch
+        has_one = authority,
     )]
     pub fraction_config: Box<Account<'info, FractionConfig>>,
 }
@@ -39,6 +37,9 @@ impl<'info> UpdateFraction<'info> {
         ];
         for i in 0..5 {
             for j in (i + 1)..5 {
+                if wallets[i] == System::id() || wallets[j] == System::id() {
+                    continue;
+                }
                 require!(
                     wallets[i] != wallets[j],
                     FractionError::DuplicateParticipantWallet

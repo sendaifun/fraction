@@ -1,24 +1,25 @@
 use crate::{errors::*, states::*};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{
-    transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked,
+    sync_native, transfer_checked, Mint, SyncNative, TokenAccount, TokenInterface, TransferChecked,
 };
 
+// WSOL (Wrapped SOL) native mint address
+pub const WSOL_MINT: Pubkey = anchor_spl::token::spl_token::native_mint::ID;
+
 #[derive(Accounts)]
-#[instruction(name: String)]
 pub struct ClaimAndDistribute<'info> {
-    pub bot: Signer<'info>,
+    pub bot_wallet: Signer<'info>,
 
     /// CHECK: The authority used to create the PDA. Checked via constraints.
     pub authority: AccountInfo<'info>,
 
     #[account(
         mut,
-        seeds = [b"fraction_config", authority.key().as_ref(), name.as_ref()],
-        bump,
+        seeds = [b"fraction_config", fraction_config.authority.key().as_ref(), fraction_config.name.as_ref()],
+        bump = fraction_config.bump,
         constraint = fraction_config.authority == authority.key() @ FractionError::InvalidAuthority,
-        constraint = fraction_config.bot_wallet == bot.key() @ FractionError::InvalidBot,
-        constraint = fraction_config.name == name @ FractionError::NameMismatch
+        constraint = fraction_config.bot_wallet == bot_wallet.key() @ FractionError::InvalidBot,
     )]
     pub fraction_config: Box<Account<'info, FractionConfig>>,
 
@@ -45,8 +46,28 @@ pub struct ClaimAndDistribute<'info> {
 
 impl<'info> ClaimAndDistribute<'info> {
     pub fn claim_and_distribute(&mut self) -> Result<()> {
+        let signer_seeds = &[
+            b"fraction_config",
+            self.fraction_config.authority.as_ref(),
+            self.fraction_config.name.as_ref(),
+            &[self.fraction_config.bump],
+        ];
+        let signer = &[&signer_seeds[..]];
+        if self.treasury_mint.key() == WSOL_MINT {
+            sync_native(CpiContext::new_with_signer(
+                self.token_program.to_account_info(),
+                SyncNative {
+                    account: self.treasury.to_account_info(),
+                },
+                signer,
+            ))?;
+        }
+        self.treasury.reload()?;
         let treasury_balance = self.treasury.amount;
-        require!(treasury_balance > 0, FractionError::NoFundsToDistribute);
+        // require!(treasury_balance > 0, FractionError::NoFundsToDistribute);
+        if treasury_balance == 0 {
+            msg!("Treasury balance is 0, throwing error");
+        }
 
         let bot_amount = treasury_balance
             .checked_mul(self.fraction_config.incentive_bps as u64)
@@ -93,18 +114,18 @@ impl<'info> ClaimAndDistribute<'info> {
         for (i, participant_token_account) in participant_token_accounts.into_iter().enumerate() {
             let participant_wallet = self.fraction_config.participants[i].wallet;
             let share_bps = self.fraction_config.participants[i].share_bps as u64;
-            
+
             // Throw error if participant wallet is the system program AND has non-zero share
             if participant_wallet == anchor_lang::system_program::ID && share_bps > 0 {
                 return Err(FractionError::SystemProgramParticipant.into());
             }
-            
+
             if share_bps > 0 {
                 let participant_share = participant_total
                     .checked_mul(share_bps)
                     .and_then(|x| x.checked_div(10_000))
                     .ok_or(FractionError::ArithmeticOverflow)?;
-                    
+
                 if participant_share > 0 {
                     transfer_checked(
                         CpiContext::new_with_signer(

@@ -9,7 +9,7 @@ skip-lint = false
 fraction = "Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg"
 
 [programs.devnet]
-fraction = "AXTUsPAQnRh2n1ZJDzNsbZgQDFhavFivMRtLHiMftVaB"
+fraction = "Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg"
 
 [registry]
 url = "https://api.apr.dev"

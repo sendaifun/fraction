@@ -33,7 +33,6 @@ pub mod fraction {
     #[instruction(discriminator = 2)]
     pub fn update_fraction(
         ctx: Context<UpdateFraction>,
-        _name: String,
         participants: [Participant; 5],
         bot_wallet: Pubkey,
     ) -> Result<()> {
@@ -41,7 +40,7 @@ pub mod fraction {
     }
 
     #[instruction(discriminator = 3)]
-    pub fn claim_and_distribute(ctx: Context<ClaimAndDistribute>, _name: String) -> Result<()> {
+    pub fn claim_and_distribute(ctx: Context<ClaimAndDistribute>) -> Result<()> {
         ctx.accounts.claim_and_distribute()
     }
 }

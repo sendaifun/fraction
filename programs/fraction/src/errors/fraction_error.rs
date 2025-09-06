@@ -22,8 +22,6 @@ pub enum FractionError {
     BotWalletConflict,
     #[msg("Invalid authority provided")]
     InvalidAuthority,
-    #[msg("Provided name does not match fraction config name")]
-    NameMismatch,
     #[msg("Invalid bot wallet")]
     InvalidBot,
     #[msg("System program cannot be a participant wallet")]
