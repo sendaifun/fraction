@@ -39,6 +39,9 @@ impl<'info> InitializeFraction<'info> {
         ];
         for i in 0..5 {
             for j in (i + 1)..5 {
+                if wallets[i] == System::id() || wallets[j] == System::id() {
+                    continue;
+                }
                 require!(
                     wallets[i] != wallets[j],
                     FractionError::DuplicateParticipantWallet

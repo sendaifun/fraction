@@ -306,7 +306,7 @@ const teamSplit = await createFraction({
 ```
 
 ### Charitable Donations with Burn
-
+//NEED TO BE IMPLEMENTED ?
 ```typescript
 // 90% to charity, 10% burned
 const charitySplit = await createFraction({
