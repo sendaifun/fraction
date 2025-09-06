@@ -42,7 +42,7 @@ async function createFractionIx(program: Program<Fraction>, input: CreatorFracti
         systemProgram: SystemProgram.programId,
     }).instruction()
 
-    return ix
+    return {ix, fractionConfigPda}
 }
 
 /**
@@ -53,7 +53,7 @@ async function createFractionIx(program: Program<Fraction>, input: CreatorFracti
  * @returns The transaction
  */
 async function createFraction(program: Program<Fraction>, input: CreatorFractionInputArgs, connection?: Connection, payer?: PublicKey) {
-    const ix = await createFractionIx(program, input)
+    const {ix, fractionConfigPda} = await createFractionIx(program, input)
 
     if (connection && payer) {
         const { blockhash } = await connection.getLatestBlockhash()
@@ -64,10 +64,10 @@ async function createFraction(program: Program<Fraction>, input: CreatorFraction
         }).compileToV0Message();
 
         const tx = new VersionedTransaction(messageV0)
-        return tx
+        return {tx, fractionConfigPda}
     } else {
         const tx = new Transaction().add(ix)
-        return tx
+        return {tx, fractionConfigPda}
     }
 }
 
