@@ -46,20 +46,12 @@ pub struct ClaimAndDistribute<'info> {
 
 impl<'info> ClaimAndDistribute<'info> {
     pub fn claim_and_distribute(&mut self) -> Result<()> {
-        let signer_seeds = &[
-            b"fraction_config",
-            self.fraction_config.authority.as_ref(),
-            self.fraction_config.name.as_ref(),
-            &[self.fraction_config.bump],
-        ];
-        let signer = &[&signer_seeds[..]];
         if self.treasury_mint.key() == WSOL_MINT {
-            sync_native(CpiContext::new_with_signer(
+            sync_native(CpiContext::new(
                 self.token_program.to_account_info(),
                 SyncNative {
                     account: self.treasury.to_account_info(),
                 },
-                signer,
             ))?;
         }
         self.treasury.reload()?;
