@@ -26,4 +26,8 @@ pub enum FractionError {
     InvalidBot,
     #[msg("System program cannot be a participant wallet")]
     SystemProgramParticipant,
+    #[msg("Invalid account owner")]
+    InvalidAccount,
+    #[msg("Missing temporary wSOL account")]
+    MissingTempAccount,
 }
