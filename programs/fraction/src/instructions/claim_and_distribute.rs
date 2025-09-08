@@ -26,24 +26,23 @@ pub struct ClaimAndDistribute<'info> {
     #[account(mut, associated_token::mint = treasury_mint, associated_token::authority = fraction_config, associated_token::token_program = token_program)]
     pub treasury: InterfaceAccount<'info, TokenAccount>,
 
-    ///CHECK: Temporary account for handling wSOL distributions
+    //Temporary account for handling wSOL distributions
     #[account(mut)]
     pub temp_wsol_account: Option<Signer<'info>>,
 
     pub treasury_mint: InterfaceAccount<'info, Mint>,
-
-    #[account(mut, constraint = bot_token_account.mint == treasury_mint.key())]
+    //superfluous checks
+    #[account(mut, token::mint = treasury_mint.key())]
     pub bot_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
-
-    #[account(mut, constraint = participant_token_account_0.mint == treasury_mint.key())]
+    #[account(mut, token::mint = treasury_mint.key())]
     pub participant_token_account_0: Box<InterfaceAccount<'info, TokenAccount>>,
-    #[account(mut, constraint = participant_token_account_1.mint == treasury_mint.key())]
+    #[account(mut, token::mint = treasury_mint.key())]
     pub participant_token_account_1: Box<InterfaceAccount<'info, TokenAccount>>,
-    #[account(mut, constraint = participant_token_account_2.mint == treasury_mint.key())]
+    #[account(mut, token::mint = treasury_mint.key())]
     pub participant_token_account_2: Box<InterfaceAccount<'info, TokenAccount>>,
-    #[account(mut, constraint = participant_token_account_3.mint == treasury_mint.key())]
+    #[account(mut, token::mint = treasury_mint.key())]
     pub participant_token_account_3: Box<InterfaceAccount<'info, TokenAccount>>,
-    #[account(mut, constraint = participant_token_account_4.mint == treasury_mint.key())]
+    #[account(mut, token::mint = treasury_mint.key())]
     pub participant_token_account_4: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub token_program: Interface<'info, TokenInterface>,

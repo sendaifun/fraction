@@ -2,7 +2,6 @@ use crate::{errors::*, states::*};
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
-#[instruction(participants: [Participant; 5])]
 pub struct UpdateFraction<'info> {
     pub authority: Signer<'info>, 
 

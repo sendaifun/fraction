@@ -2,7 +2,7 @@ use crate::{errors::*, states::*};
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
-#[instruction(name: String, participants: [Participant; 5], bot_wallet: Pubkey)]
+#[instruction(name: String)]
 pub struct InitializeFraction<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
