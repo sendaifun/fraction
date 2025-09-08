@@ -4,18 +4,12 @@ use anchor_lang::prelude::*;
 pub enum FractionError {
     #[msg("Invalid share distribution - must sum to 10,000")]
     InvalidShareDistribution,
-    #[msg("Insufficient balance for withdrawal")]
-    InsufficientBalance,
-    #[msg("Unauthorized withdrawal attempt")]
-    UnauthorizedWithdrawal,
     #[msg("Name too long")]
     NameTooLong,
     #[msg("No funds to distribute")]
     NoFundsToDistribute,
     #[msg("Arithmetic overflow")]
     ArithmeticOverflow,
-    #[msg("Participant wallet mismatch - individual wallet parameters must match participants array")]
-    ParticipantWalletMismatch,
     #[msg("Duplicate participant wallet detected")]
     DuplicateParticipantWallet,
     #[msg("Bot wallet cannot be the same as any participant wallet")]
@@ -28,6 +22,4 @@ pub enum FractionError {
     SystemProgramParticipant,
     #[msg("Invalid account owner")]
     InvalidAccount,
-    #[msg("Missing temporary wSOL account")]
-    MissingTempAccount,
 }
