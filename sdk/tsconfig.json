@@ -18,7 +18,8 @@
       "composite": true
     },
     "include": [
-      "**/*.ts"
+      "**/*.ts",
+      "**/*.json"
     ],
     "exclude": [
       "node_modules",

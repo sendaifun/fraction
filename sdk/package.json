@@ -1,7 +1,7 @@
 {
-  "name": "@sendsplits/sdk",
-  "version": "1.0.0",
-  "description": "TypeScript SDK for SendSplits Solana program",
+  "name": "@sendaifun/fraction",
+  "version": "0.0.1",
+  "description": "TypeScript SDK for Fraction Solana program",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
