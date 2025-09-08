@@ -41,21 +41,21 @@ async function claimAndDistributeIx(program: Program<Fraction>, config: PublicKe
         true
     )
 
-    const ix = await program.methods.claimAndDistribute(
-        fraction.name,
-    ).accountsStrict({
+    const ix = await program.methods.claimAndDistribute().accountsStrict({
         authority: fraction.authority,
-        bot: fraction.botWallet,
+        botWallet: fraction.botWallet,
         fractionConfig: config,
         treasury: treasuryAssociatedTokenAccount,
         treasuryMint: mint,
+        tempWsolAccount: null,
         botTokenAccount: botAssociatedTokenAccount,
         participantTokenAccount0: participantsAssociatedTokenAccount[0],
         participantTokenAccount1: participantsAssociatedTokenAccount[1],
         participantTokenAccount2: participantsAssociatedTokenAccount[2],
         participantTokenAccount3: participantsAssociatedTokenAccount[3],
         participantTokenAccount4: participantsAssociatedTokenAccount[4],
-        tokenProgram: TOKEN_PROGRAM_ID
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
     }).instruction()
 
     return ix

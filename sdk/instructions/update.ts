@@ -1,5 +1,5 @@
 import { Connection, PublicKey, SystemProgram, Transaction, TransactionMessage, VersionedTransaction } from "@solana/web3.js";
-import  { programId } from "../shared/client";
+import { programId } from "../shared/client";
 import { CreatorFractionInputArgs, UpdateFractionInputArgs } from "../types";
 import { getFractionsByConfig } from "../state";
 import { Program } from "@coral-xyz/anchor";
@@ -21,7 +21,7 @@ async function updateFractionIx(program: Program<Fraction>, config: PublicKey, i
         throw new Error("Fraction not found")
     }
 
-    if(!botWallet) {
+    if (!botWallet) {
         botWallet = fraction.botWallet;
     }
 
@@ -38,9 +38,7 @@ async function updateFractionIx(program: Program<Fraction>, config: PublicKey, i
     })
 
     const ix = await program.methods.updateFraction(
-        fraction.name,
-        participants,
-        botWallet,
+        fraction.participants, fraction.botWallet
     ).accountsPartial({
         authority: fraction.authority,
         fractionConfig: config,
