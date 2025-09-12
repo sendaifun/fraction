@@ -9,6 +9,8 @@ import {
   getAccount,
   transfer,
   createSyncNativeInstruction,
+  getAssociatedTokenAddress,
+  Account,
 } from "@solana/spl-token";
 import {
   SystemProgram,
@@ -36,6 +38,7 @@ describe("Fraction Program - Direct Distribution", () => {
   let authorityTokenAta: PublicKey;
   let botTokenAta: PublicKey;
   let participantTokenAtas: PublicKey[];
+  let systemTokenAccounts: Account;
   let treasuryTokenAccount: PublicKey;
 
   // Test setup
@@ -140,6 +143,14 @@ describe("Fraction Program - Direct Distribution", () => {
             )
           ).address
       )
+    );
+
+    systemTokenAccounts = await getOrCreateAssociatedTokenAccount(
+      connection,
+      wallet.payer,
+      testMint,
+      SystemProgram.programId,
+      true,
     );
 
     // Mint tokens to authority
@@ -583,7 +594,7 @@ describe("Fraction Program - Direct Distribution", () => {
           botTokenAccount: botTokenAta,
           participantTokenAccount0: participantTokenAtas[0],
           participantTokenAccount1: participantTokenAtas[1],
-          participantTokenAccount2: participantTokenAtas[2],
+          participantTokenAccount2: systemTokenAccounts.address,
           participantTokenAccount3: participantTokenAtas[3],
           participantTokenAccount4: participantTokenAtas[4],
           tokenProgram: TOKEN_PROGRAM_ID,
