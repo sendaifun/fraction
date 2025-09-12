@@ -26,6 +26,12 @@ impl<'info> UpdateFraction<'info> {
             FractionError::InvalidShareDistribution
         );
 
+        for p in participants.iter() {
+            if p.wallet == anchor_lang::system_program::ID && p.share_bps > 0 {
+                return Err(FractionError::SystemProgramParticipant.into());
+            }
+        }
+
         // Check for duplicate participant wallets
         let wallets = [
             participants[0].wallet,
@@ -36,7 +42,7 @@ impl<'info> UpdateFraction<'info> {
         ];
         for i in 0..5 {
             for j in (i + 1)..5 {
-                if wallets[i] == System::id() || wallets[j] == System::id() {
+                if wallets[i] == anchor_lang::system_program::ID || wallets[j] == anchor_lang::system_program::ID {
                     continue;
                 }
                 require!(

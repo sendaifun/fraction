@@ -32,17 +32,17 @@ pub struct ClaimAndDistribute<'info> {
 
     pub treasury_mint: InterfaceAccount<'info, Mint>,
     //superfluous checks
-    #[account(mut, token::mint = treasury_mint.key())]
+    #[account(mut, token::mint = treasury_mint.key(),constraint = bot_token_account.owner == bot_wallet.key() @ FractionError::InvalidAccount)]
     pub bot_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
-    #[account(mut, token::mint = treasury_mint.key())]
+    #[account(mut, token::mint = treasury_mint.key(),constraint = participant_token_account_0.owner == fraction_config.participants[0].wallet @ FractionError::InvalidAccount)]
     pub participant_token_account_0: Box<InterfaceAccount<'info, TokenAccount>>,
-    #[account(mut, token::mint = treasury_mint.key())]
+    #[account(mut, token::mint = treasury_mint.key(),constraint = participant_token_account_1.owner == fraction_config.participants[1].wallet @ FractionError::InvalidAccount)]
     pub participant_token_account_1: Box<InterfaceAccount<'info, TokenAccount>>,
-    #[account(mut, token::mint = treasury_mint.key())]
+    #[account(mut, token::mint = treasury_mint.key(),constraint = participant_token_account_2.owner == fraction_config.participants[2].wallet @ FractionError::InvalidAccount)]
     pub participant_token_account_2: Box<InterfaceAccount<'info, TokenAccount>>,
-    #[account(mut, token::mint = treasury_mint.key())]
+    #[account(mut, token::mint = treasury_mint.key(),constraint = participant_token_account_3.owner == fraction_config.participants[3].wallet @ FractionError::InvalidAccount)]
     pub participant_token_account_3: Box<InterfaceAccount<'info, TokenAccount>>,
-    #[account(mut, token::mint = treasury_mint.key())]
+    #[account(mut, token::mint = treasury_mint.key(),constraint = participant_token_account_4.owner == fraction_config.participants[4].wallet @ FractionError::InvalidAccount)]
     pub participant_token_account_4: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub token_program: Interface<'info, TokenInterface>,

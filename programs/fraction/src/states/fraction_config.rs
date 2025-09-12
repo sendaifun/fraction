@@ -5,14 +5,10 @@ use anchor_lang::prelude::*;
 #[account(discriminator = 1)]
 pub struct FractionConfig {
     pub authority: Pubkey,
-    #[max_len(50)]
+    #[max_len(20)]
     pub name: String,
     pub participants: [Participant; 5],
     pub bot_wallet: Pubkey,
     pub incentive_bps: u8,
     pub bump: u8,
-}
-
-impl FractionConfig {
-    pub const MAX_NAME_LENGTH: usize = 50;
 }
