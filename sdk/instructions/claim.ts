@@ -47,7 +47,6 @@ async function claimAndDistributeIx(program: Program<Fraction>, config: PublicKe
         fractionConfig: config,
         treasury: treasuryAssociatedTokenAccount,
         treasuryMint: mint,
-        tempWsolAccount: null,
         botTokenAccount: botAssociatedTokenAccount,
         participantTokenAccount0: participantsAssociatedTokenAccount[0],
         participantTokenAccount1: participantsAssociatedTokenAccount[1],

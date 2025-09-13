@@ -1,7 +1,6 @@
 use crate::{errors::*, states::*};
 use anchor_lang::prelude::*;
-use anchor_lang::system_program::{create_account, CreateAccount};
-use anchor_spl::token::{self, close_account, CloseAccount, InitializeAccount3};
+use anchor_spl::token::{sync_native, SyncNative};
 use anchor_spl::token_interface::{
     transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked,
 };
@@ -25,10 +24,6 @@ pub struct ClaimAndDistribute<'info> {
 
     #[account(mut, associated_token::mint = treasury_mint, associated_token::authority = fraction_config, associated_token::token_program = token_program)]
     pub treasury: InterfaceAccount<'info, TokenAccount>,
-
-    //Temporary account for handling wSOL distributions
-    #[account(mut)]
-    pub temp_wsol_account: Option<Signer<'info>>,
 
     pub treasury_mint: InterfaceAccount<'info, Mint>,
     //superfluous checks
@@ -64,112 +59,27 @@ impl<'info> ClaimAndDistribute<'info> {
         let signer = &[&signer_seeds[..]];
 
         if self.treasury_mint.key() == WSOL_MINT {
-            return self.handle_wsol_distribution(signer);
+            let sol_balance = self.treasury.to_account_info().lamports();
+            require!(sol_balance > 0, FractionError::NoFundsToDistribute);
+            self.sync_native()?;
         }
 
         let treasury_balance = self.treasury.amount;
         require!(treasury_balance > 0, FractionError::NoFundsToDistribute);
-
-        self.distribute_tokens(treasury_balance, &self.treasury.to_account_info(), signer)
+        return self.perform_token_distribution(treasury_balance, signer);
     }
 
-    fn handle_wsol_distribution(&mut self, signer: &[&[&[u8]]]) -> Result<()> {
-        let treasury_balance = self.treasury.amount;
-        require!(treasury_balance > 0, FractionError::NoFundsToDistribute);
-
-        if self.temp_wsol_account.is_none() {
-            return Err(FractionError::InvalidAccount.into());
-        }
-
-        let rent = Rent::get()?;
-        let space = anchor_spl::token::TokenAccount::LEN;
-        let lamports = rent.minimum_balance(space);
-
-        create_account(
-            CpiContext::new(
-                self.system_program.to_account_info(),
-                CreateAccount {
-                    from: self.bot_wallet.to_account_info(),
-                    to: self.temp_wsol_account.as_ref().unwrap().to_account_info(),
-                },
-            ),
-            lamports,
-            space as u64,
-            &anchor_spl::token::ID,
-        )?;
-
-        // Initialize temporary account
-        token::initialize_account3(CpiContext::new(
-            self.token_program.to_account_info(),
-            InitializeAccount3 {
-                account: self.temp_wsol_account.as_ref().unwrap().to_account_info(),
-                mint: self.treasury_mint.to_account_info(),
-                authority: self.fraction_config.to_account_info(),
-            },
-        ))?;
-
-        // Transfer entire balance to temporary account
-        transfer_checked(
-            CpiContext::new_with_signer(
-                self.token_program.to_account_info(),
-                TransferChecked {
-                    from: self.treasury.to_account_info(),
-                    mint: self.treasury_mint.to_account_info(),
-                    to: self.temp_wsol_account.as_ref().unwrap().to_account_info(),
-                    authority: self.fraction_config.to_account_info(),
-                },
-                signer,
-            ),
-            treasury_balance,
-            self.treasury_mint.decimals,
-        )?;
-
-        // Distribute from temporary account
-        self.distribute_tokens_from_temp_account(treasury_balance, signer)?;
-
-        // Close temporary account and refund to bot wallet
-        close_account(CpiContext::new_with_signer(
-            self.token_program.to_account_info(),
-            CloseAccount {
-                account: self.temp_wsol_account.as_ref().unwrap().to_account_info(),
-                destination: self.bot_wallet.to_account_info(),
-                authority: self.fraction_config.to_account_info(),
-            },
-            signer,
-        ))?;
-
+    fn sync_native(&self) -> Result<()> {
+        let cpi_accounts = SyncNative {
+            account: self.treasury.to_account_info(),
+        };
+        let cpi_program = self.token_program.to_account_info();
+        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+        sync_native(cpi_ctx)?;
         Ok(())
     }
 
-    fn distribute_tokens(
-        &mut self,
-        treasury_balance: u64,
-        source_account: &AccountInfo<'info>,
-        signer: &[&[&[u8]]],
-    ) -> Result<()> {
-        self.perform_distribution(treasury_balance, source_account, signer)
-    }
-
-    fn distribute_tokens_from_temp_account(
-        &mut self,
-        treasury_balance: u64,
-        signer: &[&[&[u8]]],
-    ) -> Result<()> {
-        let temp_account = self
-            .temp_wsol_account
-            .as_ref()
-            .ok_or(FractionError::InvalidAccount)?
-            .to_account_info();
-
-        self.perform_distribution(treasury_balance, &temp_account, signer)
-    }
-
-    fn perform_distribution(
-        &mut self,
-        treasury_balance: u64,
-        source_account: &AccountInfo<'info>,
-        signer: &[&[&[u8]]],
-    ) -> Result<()> {
+    fn perform_token_distribution(&self, treasury_balance: u64, signer: &[&[&[u8]]]) -> Result<()> {
         // Calculate bot amount
         let bot_amount = treasury_balance
             .checked_mul(self.fraction_config.incentive_bps as u64)
@@ -185,7 +95,7 @@ impl<'info> ClaimAndDistribute<'info> {
                 CpiContext::new_with_signer(
                     self.token_program.to_account_info(),
                     TransferChecked {
-                        from: source_account.clone(),
+                        from: self.treasury.to_account_info(),
                         mint: self.treasury_mint.to_account_info(),
                         to: self.bot_token_account.to_account_info(),
                         authority: self.fraction_config.to_account_info(),
@@ -224,7 +134,7 @@ impl<'info> ClaimAndDistribute<'info> {
                         CpiContext::new_with_signer(
                             self.token_program.to_account_info(),
                             TransferChecked {
-                                from: source_account.clone(),
+                                from: self.treasury.to_account_info(),
                                 mint: self.treasury_mint.to_account_info(),
                                 to: participant_token_account.to_account_info(),
                                 authority: self.fraction_config.to_account_info(),
