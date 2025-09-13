@@ -5,7 +5,7 @@ use anchor_lang::prelude::*;
 #[account(discriminator = 1)]
 pub struct FractionConfig {
     pub authority: Pubkey,
-    #[max_len(20)]
+    #[max_len(32)]
     pub name: String,
     pub participants: [Participant; 5],
     pub bot_wallet: Pubkey,

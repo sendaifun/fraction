@@ -68,7 +68,6 @@ describe("Fraction Program - Direct Distribution", () => {
               botWallet: botWallet.publicKey,
               fractionConfig: fractionConfigPda,
               treasury: treasuryTokenAccount,
-              tempWsolAccount: null,
               treasuryMint: testMint,
               botTokenAccount: botTokenAta,
               participantTokenAccount0: participantTokenAtas[0],
@@ -268,7 +267,6 @@ describe("Fraction Program - Direct Distribution", () => {
         botWallet: botWallet.publicKey,
         fractionConfig: fractionConfigPda,
         treasury: treasuryTokenAccount,
-        tempWsolAccount: null, // Not needed for regular token distribution
         treasuryMint: testMint,
         botTokenAccount: botTokenAta,
         participantTokenAccount0: participantTokenAtas[0],
@@ -312,7 +310,6 @@ describe("Fraction Program - Direct Distribution", () => {
         botWallet: botWallet.publicKey,
         fractionConfig: fractionConfigPda,
         treasury: treasuryTokenAccount,
-        tempWsolAccount: null,
         treasuryMint: testMint,
         botTokenAccount: botTokenAta,
         participantTokenAccount0: participantTokenAtas[0],
@@ -343,7 +340,6 @@ describe("Fraction Program - Direct Distribution", () => {
           botWallet: botWallet.publicKey,
           fractionConfig: fractionConfigPda,
           treasury: treasuryTokenAccount,
-          tempWsolAccount: null,
           treasuryMint: testMint,
           botTokenAccount: botTokenAta,
           participantTokenAccount0: participantTokenAtas[0],
@@ -387,7 +383,6 @@ describe("Fraction Program - Direct Distribution", () => {
           botWallet: unauthorizedBot.publicKey, // Wrong bot
           fractionConfig: fractionConfigPda,
           treasury: treasuryTokenAccount,
-          tempWsolAccount: null,
           treasuryMint: testMint,
           botTokenAccount: botTokenAta,
           participantTokenAccount0: participantTokenAtas[0],
@@ -493,7 +488,6 @@ describe("Fraction Program - Direct Distribution", () => {
           botWallet: botWallet.publicKey,
           fractionConfig: fractionConfigPda,
           treasury: treasuryTokenAccount,
-          tempWsolAccount: null,
           treasuryMint: testMint,
           botTokenAccount: botTokenAta,
           participantTokenAccount0: participantTokenAtas[0],
@@ -589,7 +583,6 @@ describe("Fraction Program - Direct Distribution", () => {
           botWallet: botWallet.publicKey,
           fractionConfig: fractionConfigPda,
           treasury: treasuryTokenAccount,
-          tempWsolAccount: null,
           treasuryMint: testMint,
           botTokenAccount: botTokenAta,
           participantTokenAccount0: participantTokenAtas[0],
@@ -612,7 +605,7 @@ describe("Fraction Program - Direct Distribution", () => {
     }
   });
 
-  it("Should handle WSOL distribution with SOL to WSOL conversion", async () => {
+  it("Should handle WSOL distribution with SOL ", async () => {
     // Create a new fraction config for WSOL testing
     const wsolFractionName = "wsol_test_fraction";
     const wsolTestParticipants = participants.map((p, i) => ({
@@ -734,7 +727,6 @@ describe("Fraction Program - Direct Distribution", () => {
         botWallet: botWallet.publicKey,
         fractionConfig: wsolFractionConfigPda,
         treasury: wsolTreasuryTokenAccount,
-        tempWsolAccount: tempWsolAccount.publicKey,
         treasuryMint: NATIVE_MINT, // WSOL native mint
         botTokenAccount: wsolBotTokenAta,
         participantTokenAccount0: wsolParticipantTokenAtas[0],
@@ -745,7 +737,7 @@ describe("Fraction Program - Direct Distribution", () => {
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
       })
-      .signers([botWallet, tempWsolAccount])
+      .signers([botWallet])
       .rpc();
 
     console.log(
@@ -839,7 +831,6 @@ describe("Fraction Program - Direct Distribution", () => {
         botWallet: botWallet.publicKey,
         fractionConfig: wsolFractionConfigPda,
         treasury: wsolTreasuryTokenAccount,
-        tempWsolAccount: tempWsolAccount2.publicKey,
         treasuryMint: NATIVE_MINT,
         botTokenAccount: wsolBotTokenAta,
         participantTokenAccount0: wsolParticipantTokenAtas[0],
@@ -850,7 +841,7 @@ describe("Fraction Program - Direct Distribution", () => {
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
       })
-      .signers([botWallet, tempWsolAccount2])
+      .signers([botWallet])
       .rpc();
 
     console.log("Second WSOL distribution executed:", secondDistributionTx);
@@ -924,7 +915,6 @@ describe("Fraction Program - Direct Distribution", () => {
           botWallet: botWallet.publicKey,
           fractionConfig: wsolFractionConfigPda,
           treasury: wsolTreasuryTokenAccount,
-          tempWsolAccount: tempWsolAccountZero.publicKey,
           treasuryMint: NATIVE_MINT,
           botTokenAccount: wsolBotTokenAta,
           participantTokenAccount0: wsolParticipantTokenAtas[0],
@@ -935,7 +925,7 @@ describe("Fraction Program - Direct Distribution", () => {
           tokenProgram: TOKEN_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
         })
-        .signers([botWallet, tempWsolAccountZero])
+        .signers([botWallet])
         .rpc();
 
       console.log("WSOL distribution with zero balance handled successfully");
