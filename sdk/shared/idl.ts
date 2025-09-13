@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/fraction.json`.
  */
 export type Fraction = {
-  "address": "2TZRnTed4ABnL41fLhcPn77d8AdqntYiEoKcvRtPeAK8",
+  "address": "Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg",
   "metadata": {
     "name": "fraction",
     "version": "0.1.0",
@@ -121,12 +121,6 @@ export type Fraction = {
               ]
             }
           }
-        },
-        {
-          "name": "tempWsolAccount",
-          "writable": true,
-          "signer": true,
-          "optional": true
         },
         {
           "name": "treasuryMint"
@@ -330,68 +324,48 @@ export type Fraction = {
     },
     {
       "code": 6001,
-      "name": "insufficientBalance",
-      "msg": "Insufficient balance for withdrawal"
-    },
-    {
-      "code": 6002,
-      "name": "unauthorizedWithdrawal",
-      "msg": "Unauthorized withdrawal attempt"
-    },
-    {
-      "code": 6003,
       "name": "nameTooLong",
       "msg": "Name too long"
     },
     {
-      "code": 6004,
+      "code": 6002,
       "name": "noFundsToDistribute",
       "msg": "No funds to distribute"
     },
     {
-      "code": 6005,
+      "code": 6003,
       "name": "arithmeticOverflow",
       "msg": "Arithmetic overflow"
     },
     {
-      "code": 6006,
-      "name": "participantWalletMismatch",
-      "msg": "Participant wallet mismatch - individual wallet parameters must match participants array"
-    },
-    {
-      "code": 6007,
+      "code": 6004,
       "name": "duplicateParticipantWallet",
       "msg": "Duplicate participant wallet detected"
     },
     {
-      "code": 6008,
+      "code": 6005,
       "name": "botWalletConflict",
       "msg": "Bot wallet cannot be the same as any participant wallet"
     },
     {
-      "code": 6009,
+      "code": 6006,
       "name": "invalidAuthority",
       "msg": "Invalid authority provided"
     },
     {
-      "code": 6010,
+      "code": 6007,
       "name": "invalidBot",
       "msg": "Invalid bot wallet"
     },
     {
-      "code": 6011,
+      "code": 6008,
       "name": "systemProgramParticipant",
       "msg": "System program cannot be a participant wallet"
     },
     {
-      "code": 6012,
+      "code": 6009,
       "name": "invalidAccount",
       "msg": "Invalid account owner"
-    },
-    {
-      "code": 6013,
-      "name": "missingTempAccount",
-      "msg": "Missing temporary wSOL account"
     }
   ],
   "types": [

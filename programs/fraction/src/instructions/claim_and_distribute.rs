@@ -1,6 +1,6 @@
 use crate::{errors::*, states::*};
 use anchor_lang::prelude::*;
-use anchor_lang::system_program::{transfer,Transfer};
+use anchor_spl::token::{sync_native, SyncNative};
 use anchor_spl::token_interface::{
     transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked,
 };
@@ -61,91 +61,25 @@ impl<'info> ClaimAndDistribute<'info> {
         if self.treasury_mint.key() == WSOL_MINT {
             let sol_balance = self.treasury.to_account_info().lamports();
             require!(sol_balance > 0, FractionError::NoFundsToDistribute);
-            return self.perform_native_distribution(sol_balance,signer);
+            self.sync_native()?;
         }
 
-        else {
-            let treasury_balance = self.treasury.amount;
-            require!(treasury_balance > 0, FractionError::NoFundsToDistribute);
-            return self.perform_token_distribution(treasury_balance,signer);
-        }
+        let treasury_balance = self.treasury.amount;
+        require!(treasury_balance > 0, FractionError::NoFundsToDistribute);
+        return self.perform_token_distribution(treasury_balance, signer);
     }
 
-    fn perform_native_distribution(
-        &self,
-        treasury_balance: u64,
-        signer: &[&[&[u8]]],
-    ) -> Result<()> {
-        // Calculate bot amount
-        let bot_amount = treasury_balance
-            .checked_mul(self.fraction_config.incentive_bps as u64)
-            .and_then(|x| x.checked_div(10_000))
-            .ok_or(FractionError::ArithmeticOverflow)?;
-
-        let participant_total = treasury_balance
-            .checked_sub(bot_amount)
-            .ok_or(FractionError::ArithmeticOverflow)?;
-
-        if bot_amount > 0 {
-            transfer(
-                CpiContext::new_with_signer(
-                    self.system_program.to_account_info(),
-                    Transfer {
-                        from: self.treasury.to_account_info(),
-                        to: self.bot_token_account.to_account_info(),
-                    },
-                    signer,
-                ),
-                bot_amount,
-            )?;
-        }
-
-        let participant_accounts = [
-            &self.participant_token_account_0,
-            &self.participant_token_account_1,
-            &self.participant_token_account_2,
-            &self.participant_token_account_3,
-            &self.participant_token_account_4,
-        ];
-
-        for (i, participant_token_account) in participant_accounts.into_iter().enumerate() {
-            let participant_wallet = self.fraction_config.participants[i].wallet;
-            let share_bps = self.fraction_config.participants[i].share_bps as u64;
-
-            if participant_wallet == anchor_lang::system_program::ID && share_bps > 0 {
-                return Err(FractionError::SystemProgramParticipant.into());
-            }
-
-            if share_bps > 0 {
-                let participant_share = participant_total
-                    .checked_mul(share_bps)
-                    .and_then(|x| x.checked_div(10_000))
-                    .ok_or(FractionError::ArithmeticOverflow)?;
-
-                if participant_share > 0 {
-                    transfer(
-                        CpiContext::new_with_signer(
-                            self.system_program.to_account_info(),
-                            Transfer {
-                                from: self.treasury.to_account_info(),
-                                to: participant_token_account.to_account_info(),
-                            },
-                            signer,
-                        ),
-                        participant_share,
-                    )?;
-                }
-            }
-        }
-
+    fn sync_native(&self) -> Result<()> {
+        let cpi_accounts = SyncNative {
+            account: self.treasury.to_account_info(),
+        };
+        let cpi_program = self.token_program.to_account_info();
+        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+        sync_native(cpi_ctx)?;
         Ok(())
     }
 
-    fn perform_token_distribution(
-        &self,
-        treasury_balance: u64,
-        signer: &[&[&[u8]]],
-    ) -> Result<()> {
+    fn perform_token_distribution(&self, treasury_balance: u64, signer: &[&[&[u8]]]) -> Result<()> {
         // Calculate bot amount
         let bot_amount = treasury_balance
             .checked_mul(self.fraction_config.incentive_bps as u64)
