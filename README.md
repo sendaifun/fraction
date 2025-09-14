@@ -5,7 +5,7 @@ On-chain infrastructure for automated revenue splits and treasury management on 
 Built for agentic workflows and consumer apps.
 
 <!-- Image placeholder for product demonstration -->
-![Fraction Protocol Overview](./docs/images/fraction-overview.png)
+![Fraction Protocol Overview](./docs/images/img1.png)
 
 ## Real-World Workflows
 
@@ -39,9 +39,6 @@ The protocol ensures atomic settlement with zero manual intervention, supporting
 
 Plug in with our TypeScript SDKs and pre-built React components. Go from install to live integration in under 10 minutes. A flat 0.05% protocol fee applies.
 
-<!-- Image placeholder for integration demonstration -->
-![Integration Guide](./docs/images/integration-guide.png)
-
 **[View SDK Documentation →](./sdk/README.md)**
 
 ## Technical Architecture
@@ -71,8 +68,6 @@ When the authorized agent executes distribution:
 
 All contracts are open-source with reproducible builds. Code is formally verified and independently audited by Sec3.
 
-<!-- Image placeholder for security demonstration -->
-![Security & Audits](./docs/images/security-audits.png)
 
 ### Security Features
 
@@ -106,7 +101,7 @@ anchor test
 ### Deployment
 
 **Devnet**: `Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg`
-**Mainnet**: `Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg`
+**Mainnet**: `Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg` 
 
 ## Documentation
 
