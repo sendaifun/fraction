@@ -52,8 +52,8 @@ use solana_security_txt::security_txt;
 security_txt! {
     name: "Fraction",
     project_url: "https://fraction.sendai.fun",
-    contacts: "link:https://github.com/sendaifun/fraction/main/SECURITY.md",
-    policy: "https://github.com/sendaifun/fraction/main/SECURITY.md",
+    contacts: "link:https://github.com/sendaifun/fraction/blob/main/SECURITY.md",
+    policy: "https://github.com/sendaifun/fraction/blob/main/SECURITY.md",
     preferred_languages: "en",
     source_code: "https://github.com/sendaifun/fraction"
 }
