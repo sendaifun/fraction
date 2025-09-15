@@ -1,6 +1,6 @@
 # Fraction SDK
 
-TypeScript SDK for integrating with the Fraction protocol - automated revenue distribution and treasury management on Solana.
+TypeScript SDK for integrating with the Fraction protocol - split any transaction into fraction on Solana.
 
 ## Table of Contents
 
@@ -19,12 +19,7 @@ TypeScript SDK for integrating with the Fraction protocol - automated revenue di
 ## Installation
 
 ```bash
-npm install @sendaifun/fraction
-```
-
-**Peer Dependencies**:
-```bash
-npm install @solana/web3.js @solana/spl-token @coral-xyz/anchor
+pnpm install @sendaifun/fraction
 ```
 
 ## Quick Start
@@ -87,7 +82,7 @@ new Fraction(rpc?: string, payer?: PublicKey)
 
 **Parameters:**
 - `rpc` - RPC endpoint (defaults to mainnet-beta)
-- `payer` - Transaction fee payer
+- `payer` - Transaction fee payer (only required for versioned transaction)
 
 #### Methods
 
@@ -369,23 +364,3 @@ type FractionConfig = {
   bump: number;
 }
 ```
-
----
-
-## Program Information
-
-- **Program ID**: `Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg`
-- **Network**: Solana Mainnet & Devnet
-- **Maximum Participants**: 5 per configuration
-- **Share Precision**: Basis points (10,000 = 100%)
-- **Protocol Fee**: 2% (200 BPS) to distribution agent
-
-## Support
-
-**Documentation**: [Technical Documentation](../FLOW.md)
-**Issues**: Create an issue in the repository
-**Examples**: Review test files for additional usage patterns
-
-## License
-
-MIT License

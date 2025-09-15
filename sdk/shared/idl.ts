@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/fraction.json`.
  */
 export type Fraction = {
-  "address": "Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg",
+  "address": "FracVQuBhSeBvbw1qNrJKkDmcdPcFYWdneoKbJa3HMrj",
   "metadata": {
     "name": "fraction",
     "version": "0.1.0",
