@@ -44,3 +44,16 @@ pub mod fraction {
         ctx.accounts.claim_and_distribute()
     }
 }
+
+
+#[cfg(not(feature = "no-entrypoint"))]
+use solana_security_txt::security_txt;
+#[cfg(not(feature = "no-entrypoint"))]
+security_txt! {
+    name: "Fraction",
+    project_url: "https://fraction.sendai.fun",
+    contacts: "link:https://github.com/sendaifun/fraction/blob/main/SECURITY.md",
+    policy: "https://github.com/sendaifun/fraction/blob/main/SECURITY.md",
+    preferred_languages: "en",
+    source_code: "https://github.com/sendaifun/fraction"
+}
