@@ -6,10 +6,10 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-fraction = "Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg"
+fraction = "FracVQuBhSeBvbw1qNrJKkDmcdPcFYWdneoKbJa3HMrj"
 
 [programs.devnet]
-fraction = "Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg"
+fraction = "FracVQuBhSeBvbw1qNrJKkDmcdPcFYWdneoKbJa3HMrj"
 
 [registry]
 url = "https://api.apr.dev"

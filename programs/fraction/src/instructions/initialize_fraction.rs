@@ -60,7 +60,7 @@ impl<'info> InitializeFraction<'info> {
             name,
             participants,
             bot_wallet,
-            incentive_bps: 200u8,
+            incentive_bps: 5u8,
             bump: bumps.fraction_config,
         });
 

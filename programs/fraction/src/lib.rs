@@ -9,7 +9,7 @@ pub use states::*;
 pub mod errors;
 pub use errors::*;
 
-declare_id!("Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg");
+declare_id!("FracVQuBhSeBvbw1qNrJKkDmcdPcFYWdneoKbJa3HMrj");
 
 #[program]
 pub mod fraction {
@@ -43,4 +43,17 @@ pub mod fraction {
     pub fn claim_and_distribute(ctx: Context<ClaimAndDistribute>) -> Result<()> {
         ctx.accounts.claim_and_distribute()
     }
+}
+
+
+#[cfg(not(feature = "no-entrypoint"))]
+use solana_security_txt::security_txt;
+#[cfg(not(feature = "no-entrypoint"))]
+security_txt! {
+    name: "Fraction",
+    project_url: "https://fraction.sendai.fun",
+    contacts: "link:https://github.com/sendaifun/fraction/main/SECURITY.md",
+    policy: "https://github.com/sendaifun/fraction/main/SECURITY.md",
+    preferred_languages: "en",
+    source_code: "https://github.com/sendaifun/fraction"
 }

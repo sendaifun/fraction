@@ -22,3 +22,4 @@ anchor-lang = { version = "0.31.1", features = ["init-if-needed", "lazy-account"
 anchor-spl = { version = "0.31.1", features = ["metadata"] }
 const-crypto = "0.3.0"
 bytemuck = { version = "1.13.1", features = ["derive", "min_const_generics"] }
+solana-security-txt = "1.1.1"

@@ -691,6 +691,7 @@ dependencies = [
  "anchor-spl",
  "bytemuck",
  "const-crypto",
+ "solana-security-txt",
 ]
 
 [[package]]
