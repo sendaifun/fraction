@@ -149,7 +149,7 @@ describe("Fraction Program - Direct Distribution", () => {
       wallet.payer,
       testMint,
       SystemProgram.programId,
-      true,
+      true
     );
 
     // Mint tokens to authority
@@ -687,7 +687,7 @@ describe("Fraction Program - Direct Distribution", () => {
         toPubkey: wsolTreasuryTokenAccount,
         lamports: solAmount,
       }),
-      createSyncNativeInstruction(wsolTreasuryTokenAccount)
+      c(wsolTreasuryTokenAccount)
     );
 
     const solTransferTx = await connection.sendTransaction(wrapTx, [

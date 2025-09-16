@@ -2,7 +2,7 @@
 
 # Fraction
 
-![Fraction Protocol Overview](./docs/images/img1.png)
+![Fraction Protocol Overview](./docs/images/img.png)
 
 *built for agents & apps*
 
@@ -10,9 +10,9 @@
 
 ### How It Works
 
-- You create a `fraction_config` which defines how funds should flow 
+- You create a `fraction_config` which defines how funds should flow
 - Anyone can send money to this `fraction_config` address
-- A cranker, checks and intiates `claim` transaction which distributes all funds present according to the intial config defined. 
+- A cranker, checks and intiates `claim` transaction which distributes all funds present according to the intial config defined.
 
 **[View SDK Documentation →](./sdk/README.md)**
 
@@ -41,7 +41,7 @@ All contracts are open-source with reproducible builds. Code is formally verifie
 
 **Autonomous Agents**  - Instantly split revenue with agents running task for you.
 
-**Token Launchpads**  - Automate token sale proceeds and treasury allocations. 
+**Token Launchpads**  - Automate token sale proceeds and treasury allocations.
 
 split any transaction into fraction.
 
@@ -50,7 +50,7 @@ split any transaction into fraction.
 
 **Devnet**: `FracVQuBhSeBvbw1qNrJKkDmcdPcFYWdneoKbJa3HMrj`
 
-**Mainnet**: `FracVQuBhSeBvbw1qNrJKkDmcdPcFYWdneoKbJa3HMrj` 
+**Mainnet**: `FracVQuBhSeBvbw1qNrJKkDmcdPcFYWdneoKbJa3HMrj`
 
 
 ## License
