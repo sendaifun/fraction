@@ -215,7 +215,7 @@ The SDK includes comprehensive error handling for common scenarios:
 
 ## Program Details
 
-- **Program ID**: `2TZRnTed4ABnL41fLhcPn77d8AdqntYiEoKcvRtPeAK8`
+- **Program ID**: `FracVQuBhSeBvbw1qNrJKkDmcdPcFYWdneoKbJa3HMrj`
 - **Network**: Solana (Devnet/Mainnet)
 - **Max Participants**: 5 per fraction
 - **Share Precision**: Basis points (1 BPS = 0.01%)

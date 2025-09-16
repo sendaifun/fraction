@@ -2,7 +2,7 @@ import { CreatorFractionInputArgs, UpdateFractionInputArgs } from "./types"
 import { PublicKey } from "@solana/web3.js"
 import { createFraction, updateFraction, claimAndDistribute } from "./instructions"
 import { Connection } from "@solana/web3.js"
-import { getFractionsByParticipant, getFractionsByConfig, getFractionBalance } from "./state"
+import { getFractionsByParticipant, getFractionsByConfig, getFractionBalance, getFractionsByAuthority } from "./state"
 import { Program } from "@coral-xyz/anchor"
 import { Fraction as FractionIdl } from "./shared/idl"
 import { getProgram } from "./shared/client"
@@ -88,7 +88,16 @@ export class Fraction {
      * @param config - The config to get the balance for
      * @returns The balance
      */
-    async getFractionBalance(config: PublicKey) {
-        return getFractionBalance(this.program, config)
+    async getFractionBalance(config: PublicKey, mint: PublicKey) {
+        return getFractionBalance(this.program, config, mint)
+    }
+
+    /**
+     * Get a fraction by an authority
+     * @param authority - The authority to get the fraction for
+     * @returns The fraction
+     */
+    async getFractionsByAuthority(authority: PublicKey) {
+        return getFractionsByAuthority(this.program, authority)
     }
 }

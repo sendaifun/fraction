@@ -35,7 +35,24 @@ export async function getFractionsByConfig(program: Program<Fraction>, config: P
 }
 
 // TODO
-export async function getFractionBalance(program: Program<Fraction>, config: PublicKey) {
+export async function getFractionBalance(program: Program<Fraction>, config: PublicKey, mint: PublicKey) {
     const fraction = await program.account.fractionConfig.fetch(config)
     return fraction
 }
+
+/*
+* Get a fraction by an authority
+* @param authority - The authority to get the fraction for
+* @returns The fraction
+*/
+export async function getFractionsByAuthority(program: Program<Fraction>, authority: PublicKey) {
+    const fraction = await program.account.fractionConfig.all()
+    let foundFraction = [] as FractionConfig[]
+    fraction.forEach(f => {
+        if (f.account.authority.equals(authority)) {
+            foundFraction.push(f.account)
+        }
+    })
+    return foundFraction
+}
+// TODO ^ improve the filter, to reduce time

@@ -39,7 +39,7 @@ async function updateFractionIx(program: Program<Fraction>, config: PublicKey, i
 
     const ix = await program.methods.updateFraction(
         fraction.participants, fraction.botWallet
-    ).accountsPartial({
+    ).accountsStrict({
         authority: fraction.authority,
         fractionConfig: config,
     }).instruction()

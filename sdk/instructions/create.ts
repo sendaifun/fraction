@@ -36,7 +36,7 @@ async function createFractionIx(program: Program<Fraction>, input: CreatorFracti
         fractionName,
         participants,
         botWallet,
-    ).accountsPartial({
+    ).accountsStrict({
         authority,
         fractionConfig: fractionConfigPda,
         systemProgram: SystemProgram.programId,
