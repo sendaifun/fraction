@@ -1,205 +1,237 @@
-# SendSplits SDK
+# Fraction SDK
 
-A TypeScript SDK for interacting with the SendSplits Solana program - a revenue sharing and token distribution platform that allows automatic splitting of funds among multiple participants.
+TypeScript SDK for integrating with the Fraction protocol - split any transaction into fraction on Solana.
 
-## Overview
+## Table of Contents
 
-SendSplits enables you to:
-- Create fraction configurations with up to 5 participants
-- Define custom share distributions using basis points (BPS)
-- Automatically distribute tokens from a treasury to participants
-- Update participant configurations
-- Claim and distribute accumulated funds
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [API Reference](#api-reference)
+  - [Client Class](#client-class)
+  - [Instructions](#instructions)
+  - [State Queries](#state-queries)
+- [Code Examples](#code-examples)
+- [Error Handling](#error-handling)
+- [Advanced Usage](#advanced-usage)
+
+---
 
 ## Installation
 
 ```bash
-pnpm install @solana/web3.js @solana/spl-token @coral-xyz/anchor
+pnpm install @sendaifun/fraction
 ```
 
 ## Quick Start
 
+### Initialize Client
+
 ```typescript
-import { Connection, PublicKey, Keypair } from '@solana/web3.js';
-import { createFraction, claimAndDistribute } from './sdk';
+import { Fraction } from '@sendaifun/fraction';
+import { Connection, Keypair } from '@solana/web3.js';
 
 const connection = new Connection('https://api.devnet.solana.com');
-const authority = Keypair.generate();
-const participants = [
-  { wallet: new PublicKey('...'), shareBps: 5000 }, // 50%
-  { wallet: new PublicKey('...'), shareBps: 3000 }, // 30%
-  { wallet: new PublicKey('...'), shareBps: 2000 }, // 20%
-];
+const payer = Keypair.generate();
 
-// Create a new fraction
-const tx = await createFraction({
-  participants,
-  authority: authority.publicKey,
-  name: 'my-revenue-split',
-  botWallet: new PublicKey('...')
-}, connection, authority.publicKey);
-```
-
-## Core Concepts
-
-### Participants
-Each participant has:
-- **wallet**: The recipient's public key
-- **shareBps**: Share in basis points (1-10000, where 10000 = 100%)
-
-### Fraction Configuration
-A fraction configuration contains:
-- **authority**: The owner who can modify the configuration
-- **name**: A unique identifier for the fraction
-- **participants**: Array of up to 5 participants
-- **botWallet**: Wallet authorized to trigger distributions
-- **incentiveBps**: Bot incentive in basis points
-
-### Share Distribution Rules
-- Total shares must sum to exactly 10,000 BPS (100%)
-- Individual shares can range from 0 to 10,000 BPS
-- System program (11111111111111111111111111111111) can be used as a participant with 0 shares (burn address)
-
-## API Reference
-
-### Instructions
-
-#### `createFraction(input, connection?, payer?)`
-Creates a new fraction configuration.
-
-**Parameters:**
-- `input: CreatorFractionInputArgs`
-  - `participants: Participant[]` - Array of participants (max 5)
-  - `authority: PublicKey` - Configuration owner
-  - `name?: string` - Optional name (auto-generated if not provided)
-  - `botWallet?: PublicKey` - Bot authorized for distributions
-- `connection?: Connection` - Solana connection for versioned transaction
-- `payer?: PublicKey` - Transaction fee payer
-
-**Returns:** `Transaction | VersionedTransaction`
-
-**Example:**
-```typescript
-const participants = [
-  { wallet: user1.publicKey, shareBps: 6000 },
-  { wallet: user2.publicKey, shareBps: 4000 }
-];
-
-const tx = await createFraction({
-  participants,
-  authority: authority.publicKey,
-  name: 'revenue-split-v1',
-  botWallet: bot.publicKey
-});
-```
-
-#### `updateFraction(config, input, connection?, payer?)`
-Updates an existing fraction configuration.
-
-**Parameters:**
-- `config: PublicKey` - The fraction configuration account
-- `input: UpdateFractionInputArgs`
-  - `participants: Participant[]` - Updated participants array
-  - `botWallet?: PublicKey` - Updated bot wallet
-- `connection?: Connection` - Solana connection
-- `payer?: PublicKey` - Transaction fee payer
-
-**Returns:** `Transaction | VersionedTransaction`
-
-**Example:**
-```typescript
-const updatedParticipants = [
-  { wallet: user1.publicKey, shareBps: 5000 },
-  { wallet: user2.publicKey, shareBps: 5000 }
-];
-
-const tx = await updateFraction(configPda, {
-  participants: updatedParticipants,
-  botWallet: newBot.publicKey
-});
-```
-
-#### `claimAndDistribute(config, mint, connection?, payer?)`
-Claims tokens from treasury and distributes to participants.
-
-**Parameters:**
-- `config: PublicKey` - The fraction configuration account
-- `mint: PublicKey` - Token mint to distribute
-- `connection?: Connection` - Solana connection
-- `payer?: PublicKey` - Transaction fee payer
-
-**Returns:** `Transaction | VersionedTransaction`
-
-**Example:**
-```typescript
-const tx = await claimAndDistribute(
-  configPda,
-  usdcMint,
-  connection,
-  bot.publicKey
+// Initialize client
+const client = new Fraction(
+  'https://api.devnet.solana.com', // RPC endpoint
+  payer.publicKey                  // Transaction payer
 );
 ```
 
-### State Queries
-
-#### `getFractionsByParticipant(participant)`
-Retrieves all fractions where the specified wallet is a participant.
-
-**Parameters:**
-- `participant: PublicKey` - Participant's wallet address
-
-**Returns:** `Promise<FractionConfig[]>`
-
-#### `getFractionsByConfig(config)`
-Retrieves a specific fraction configuration.
-
-**Parameters:**
-- `config: PublicKey` - Configuration account address
-
-**Returns:** `Promise<FractionConfig>`
-
-### Instruction Builders
-
-For advanced usage, you can build instructions without creating transactions:
-
-#### `createFractionIx(input)`
-**Returns:** `Promise<TransactionInstruction>`
-
-#### `updateFractionIx(config, input)`
-**Returns:** `Promise<TransactionInstruction>`
-
-#### `claimAndDistributeIx(config, mint)`
-**Returns:** `Promise<TransactionInstruction>`
-
-## Types
+### Create Revenue Split Configuration
 
 ```typescript
-type Participant = {
-  wallet: PublicKey;
-  shareBps: number; // 0-10000 basis points
-}
+const participants = [
+  { wallet: teamMember1.publicKey, shareBps: 4000 }, // 40%
+  { wallet: teamMember2.publicKey, shareBps: 3000 }, // 30%
+  { wallet: teamMember3.publicKey, shareBps: 2000 }, // 20%
+  { wallet: teamMember4.publicKey, shareBps: 1000 }, // 10%
+];
 
-type FractionConfig = {
-  authority: PublicKey;
-  name: string;
-  participants: Participant[];
-  botWallet: PublicKey;
-  incentiveBps: number;
-  bump: number;
-}
+const { tx, fractionConfigPda } = await client.createFraction({
+  participants,
+  authority: authority.publicKey,
+  name: 'team-revenue-split',
+  botWallet: distributionAgent.publicKey
+});
+```
 
+### Execute Distribution
+
+```typescript
+// Agent triggers distribution
+const tx = await client.claimAndDistribute(
+  fractionConfigPda,     // Configuration account
+  usdcMint               // Token mint to distribute
+);
+```
+
+---
+
+## API Reference
+
+### Client Class
+
+#### Constructor
+
+```typescript
+new Fraction(rpc?: string, payer?: PublicKey)
+```
+
+**Parameters:**
+- `rpc` - RPC endpoint (defaults to mainnet-beta)
+- `payer` - Transaction fee payer (only required for versioned transaction)
+
+#### Methods
+
+##### `createFraction(input: CreatorFractionInputArgs)`
+
+Creates new revenue split configuration.
+
+**Input Type:**
+```typescript
 type CreatorFractionInputArgs = {
   participants: Participant[];
   authority: PublicKey;
   name?: string;
-  botWallet?: PublicKey;
+  botWallet: PublicKey;
 }
+```
 
+**Returns:** `Promise<{ tx: Transaction | VersionedTransaction, fractionConfigPda: PublicKey }>`
+
+##### `updateFraction(config: PublicKey, input: UpdateFractionInputArgs)`
+
+Updates existing configuration.
+
+**Input Type:**
+```typescript
 type UpdateFractionInputArgs = {
   participants: Participant[];
   botWallet?: PublicKey;
 }
 ```
+
+**Returns:** `Promise<Transaction | VersionedTransaction>`
+
+##### `claimAndDistribute(config: PublicKey, mint: PublicKey)`
+
+Executes distribution to all participants.
+
+**Returns:** `Promise<Transaction | VersionedTransaction>`
+
+### Instructions
+
+Low-level instruction builders for advanced usage.
+
+#### `createFractionIx(program: Program<Fraction>, input: CreatorFractionInputArgs)`
+
+**Returns:** `Promise<{ ix: TransactionInstruction, fractionConfigPda: PublicKey }>`
+
+#### `updateFractionIx(program: Program<Fraction>, config: PublicKey, input: UpdateFractionInputArgs)`
+
+**Returns:** `Promise<TransactionInstruction>`
+
+#### `claimAndDistributeIx(program: Program<Fraction>, config: PublicKey, mint: PublicKey)`
+
+**Returns:** `Promise<TransactionInstruction>`
+
+### State Queries
+
+#### `getFractionsByParticipant(participant: PublicKey)`
+
+Retrieves all configurations where wallet is a participant.
+
+**Returns:** `Promise<FractionConfig[]>`
+
+#### `getFractionsByConfig(config: PublicKey)`
+
+Retrieves specific configuration account.
+
+**Returns:** `Promise<FractionConfig>`
+
+#### `getFractionBalance(config: PublicKey)`
+
+Gets treasury balance for configuration.
+
+**Returns:** `Promise<FractionConfig>`
+
+---
+
+## Code Examples
+
+### Enterprise Revenue Distribution
+
+```typescript
+import { Fraction } from '@sendaifun/fraction';
+import { Connection, Keypair, PublicKey } from '@solana/web3.js';
+
+const connection = new Connection('https://api.mainnet-beta.solana.com');
+const client = new Fraction(connection.rpcEndpoint, authority.publicKey);
+
+// Define revenue allocation
+const participants = [
+  { wallet: founder.publicKey, shareBps: 4000 },    // 40% founder
+  { wallet: team.publicKey, shareBps: 3000 },       // 30% team  
+  { wallet: investors.publicKey, shareBps: 2000 },  // 20% investors
+  { wallet: operations.publicKey, shareBps: 1000 }  // 10% operations
+];
+
+// Deploy configuration
+const { tx, fractionConfigPda } = await client.createFraction({
+  participants,
+  authority: company.publicKey,
+  name: 'quarterly-revenue-2024',
+  botWallet: automatedAgent.publicKey
+});
+
+// Sign and submit
+await connection.sendTransaction(tx, [authority]);
+```
+
+### Multi-Token Distribution System
+
+```typescript
+const tokens = [
+  { mint: usdcMint, name: 'USDC Revenue' },
+  { mint: solMint, name: 'SOL Rewards' },
+  { mint: projectToken, name: 'Token Emissions' }
+];
+
+// Distribute multiple tokens using same configuration
+for (const token of tokens) {
+  const distributionTx = await client.claimAndDistribute(
+    fractionConfigPda,
+    token.mint
+  );
+  
+  await connection.sendTransaction(distributionTx, [agent]);
+  console.log(`Distributed ${token.name}`);
+}
+```
+
+### Dynamic Configuration Updates
+
+```typescript
+// Quarterly rebalancing
+const newAllocation = [
+  { wallet: founder.publicKey, shareBps: 3500 },    // Reduced to 35%
+  { wallet: team.publicKey, shareBps: 3500 },       // Increased to 35%
+  { wallet: investors.publicKey, shareBps: 2000 },  // Maintained 20%
+  { wallet: operations.publicKey, shareBps: 1000 }  // Maintained 10%
+];
+
+const updateTx = await client.updateFraction(fractionConfigPda, {
+  participants: newAllocation,
+  botWallet: newAgent.publicKey // Optional: update agent
+});
+
+await connection.sendTransaction(updateTx, [authority]);
+```
+
+---
 
 ## Error Handling
 
@@ -222,110 +254,83 @@ The SDK includes comprehensive error handling for common scenarios:
 
 ## Advanced Usage
 
-### Custom Transaction Building
+### Custom Instruction Building
+
+Build complex transactions with multiple operations:
 
 ```typescript
-import { createFractionIx } from './sdk';
+import { createFractionIx, getProgram } from '@sendaifun/fraction';
 import { Transaction } from '@solana/web3.js';
 
-// Build custom transaction with multiple instructions
-const ix = await createFractionIx({
-  participants: myParticipants,
-  authority: authority.publicKey
+const program = getProgram(connection);
+
+// Create instruction
+const { ix, fractionConfigPda } = await createFractionIx(program, {
+  participants: participants,
+  authority: authority.publicKey,
+  botWallet: agent.publicKey
 });
 
+// Build composite transaction
 const tx = new Transaction()
-  .add(someOtherInstruction)
+  .add(setupInstruction)
   .add(ix)
-  .add(anotherInstruction);
+  .add(followupInstruction);
 ```
 
-### Treasury Management
-
-The treasury uses Associated Token Accounts (ATA) derived from:
-- Owner: Fraction configuration PDA
-- Mint: Token being distributed
+### Treasury Account Management
 
 ```typescript
 import { getAssociatedTokenAddressSync } from '@solana/spl-token';
 
-const treasuryAta = getAssociatedTokenAddressSync(
-  tokenMint,
-  fractionConfigPda,
-  true // allowOwnerOffCurve
+// Calculate treasury address
+const treasuryAddress = getAssociatedTokenAddressSync(
+  tokenMint,          // Token to be distributed
+  fractionConfigPda,  // Treasury owner (PDA)
+  true                // Allow off-curve addresses
+);
+
+// Fund treasury
+await transfer(
+  connection,
+  payer,
+  sourceTokenAccount,
+  treasuryAddress,
+  authority,
+  amount
 );
 ```
 
-### PDA Derivation
+### Configuration Account Derivation
 
 ```typescript
 import { PublicKey } from '@solana/web3.js';
 
-const [fractionConfigPda] = PublicKey.findProgramAddressSync(
+// Derive configuration PDA
+const [configPda, bump] = PublicKey.findProgramAddressSync(
   [
     Buffer.from("fraction_config"),
     authority.toBuffer(),
-    Buffer.from(fractionName)
+    Buffer.from(configurationName)
   ],
   programId
 );
 ```
 
-## Examples
-
-### Revenue Sharing for a Creator
+### Type Definitions
 
 ```typescript
-// Setup 70% creator, 20% manager, 10% platform
-const revenueShare = await createFraction({
-  participants: [
-    { wallet: creator.publicKey, shareBps: 7000 },
-    { wallet: manager.publicKey, shareBps: 2000 },
-    { wallet: platform.publicKey, shareBps: 1000 }
-  ],
-  authority: creator.publicKey,
-  name: 'creator-revenue-v1',
-  botWallet: distributionBot.publicKey
-});
+type Participant = {
+  wallet: PublicKey;
+  shareBps: number; // 0-10,000 basis points
+}
+
+type FractionConfig = {
+  authority: PublicKey;
+  name: string;
+  participants: Participant[];
+  botWallet: PublicKey;
+  incentiveBps: number;
+  bump: number;
+}
 ```
-
-### Team Salary Distribution
-
-```typescript
-// Equal distribution among team members
-const teamSplit = await createFraction({
-  participants: [
-    { wallet: dev1.publicKey, shareBps: 2500 },
-    { wallet: dev2.publicKey, shareBps: 2500 },
-    { wallet: designer.publicKey, shareBps: 2500 },
-    { wallet: manager.publicKey, shareBps: 2500 }
-  ],
-  authority: company.publicKey,
-  name: 'team-salary-q4-2024'
-});
-```
-
-### Charitable Donations with Burn
-//NEED TO BE IMPLEMENTED ?
-```typescript
-// 90% to charity, 10% burned
-const charitySplit = await createFraction({
-  participants: [
-    { wallet: charityWallet.publicKey, shareBps: 9000 },
-    { wallet: SystemProgram.programId, shareBps: 1000 } // Burn 10%
-  ],
-  authority: donor.publicKey,
-  name: 'charity-donation-2024'
-});
-```
-
-## Support
-
-For issues, feature requests, or questions:
-- Create an issue in the repository
-- Check the test files for additional usage examples
-- Review the program IDL for detailed account structures
-
-## License
-
-ISC License
