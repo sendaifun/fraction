@@ -10,5 +10,6 @@ pub struct FractionConfig {
     pub participants: [Participant; 5],
     pub bot_wallet: Pubkey,
     pub incentive_bps: u8,
-    pub bump: u8,
+    pub vault_bump: u8,     
+    pub config_bump: u8,    
 }
