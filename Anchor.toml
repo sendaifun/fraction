@@ -9,13 +9,13 @@ skip-lint = false
 fraction = "FracVQuBhSeBvbw1qNrJKkDmcdPcFYWdneoKbJa3HMrj"
 
 [programs.devnet]
-fraction = "FracVQuBhSeBvbw1qNrJKkDmcdPcFYWdneoKbJa3HMrj"
+fraction = "Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

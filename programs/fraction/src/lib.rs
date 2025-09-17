@@ -9,7 +9,7 @@ pub use states::*;
 pub mod errors;
 pub use errors::*;
 
-declare_id!("FracVQuBhSeBvbw1qNrJKkDmcdPcFYWdneoKbJa3HMrj");
+declare_id!("Ck2PtB73t36kjk4mLUztwsBV9jvq7q3mGfSNmQevwFgg");
 
 #[program]
 pub mod fraction {

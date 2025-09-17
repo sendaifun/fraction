@@ -76,8 +76,8 @@ impl<'info> InitializeFraction<'info> {
             participants,
             bot_wallet,
             incentive_bps: 5u8,
-            vault_bump: bumps.fraction_vault,      // 🔑 Store vault bump
-            config_bump: bumps.fraction_config,    // Store config bump
+            vault_bump: bumps.fraction_vault,
+            config_bump: bumps.fraction_config,
         });
 
         Ok(())
