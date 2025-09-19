@@ -16,7 +16,14 @@ export type Fraction = {
     {
       "name": "claimAndDistribute",
       "discriminator": [
-        3
+        111,
+        147,
+        210,
+        144,
+        253,
+        16,
+        187,
+        238
       ],
       "accounts": [
         {
@@ -66,13 +73,50 @@ export type Fraction = {
           }
         },
         {
+          "name": "fractionVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  114,
+                  97,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "fraction_config.authority",
+                "account": "fractionConfig"
+              },
+              {
+                "kind": "account",
+                "path": "fraction_config.name",
+                "account": "fractionConfig"
+              }
+            ]
+          }
+        },
+        {
           "name": "treasury",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "fractionConfig"
+                "path": "fractionVault"
               },
               {
                 "kind": "account",
@@ -162,7 +206,14 @@ export type Fraction = {
     {
       "name": "initializeFraction",
       "discriminator": [
-        1
+        159,
+        21,
+        140,
+        42,
+        52,
+        59,
+        103,
+        82
       ],
       "accounts": [
         {
@@ -193,6 +244,41 @@ export type Fraction = {
                   102,
                   105,
                   103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "arg",
+                "path": "name"
+              }
+            ]
+          }
+        },
+        {
+          "name": "fractionVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  114,
+                  97,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
                 ]
               },
               {
@@ -238,7 +324,14 @@ export type Fraction = {
     {
       "name": "updateFraction",
       "discriminator": [
-        2
+        176,
+        173,
+        246,
+        104,
+        94,
+        102,
+        30,
+        180
       ],
       "accounts": [
         {
@@ -312,7 +405,14 @@ export type Fraction = {
     {
       "name": "fractionConfig",
       "discriminator": [
-        1
+        164,
+        123,
+        52,
+        71,
+        72,
+        174,
+        132,
+        174
       ]
     }
   ],
@@ -404,7 +504,11 @@ export type Fraction = {
             "type": "u8"
           },
           {
-            "name": "bump",
+            "name": "vaultBump",
+            "type": "u8"
+          },
+          {
+            "name": "configBump",
             "type": "u8"
           }
         ]

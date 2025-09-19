@@ -3,7 +3,8 @@ import { Keypair, PublicKey, Connection, VersionedTransaction, LAMPORTS_PER_SOL,
 import { Fraction, createFractionIx } from "../index"
 import { createMint, getOrCreateAssociatedTokenAccount, mintTo } from "@solana/spl-token"
 
-const rpc = "http://127.0.0.1:8899"
+// const rpc = "http://127.0.0.1:8899"
+const rpc = "https://api.devnet.solana.com"
 
 describe("Fraction", () => {
 
