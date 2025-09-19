@@ -56,9 +56,7 @@ impl<'info> InitializeFraction<'info> {
         ];
         for i in 0..5 {
             for j in (i + 1)..5 {
-                if wallets[i] == anchor_lang::system_program::ID
-                    || wallets[j] == anchor_lang::system_program::ID
-                {
+                if wallets[i] == anchor_lang::system_program::ID || wallets[j] == anchor_lang::system_program::ID {
                     continue;
                 }
                 require!(

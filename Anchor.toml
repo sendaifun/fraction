@@ -15,7 +15,7 @@ fraction = "SW1CganGidSZjswyi7SwJuq6QN7LdkcJgSTQhrTUyUC"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

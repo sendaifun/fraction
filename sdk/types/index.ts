@@ -27,5 +27,6 @@ export type FractionConfig = {
     participants: Participant[];
     botWallet: PublicKey;
     incentiveBps: number;
-    bump: number;
+    vaultBump: number;
+    configBump: number;
 }
