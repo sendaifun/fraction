@@ -13,20 +13,33 @@ pub struct ClaimAndDistribute<'info> {
 
     /// CHECK:
     pub authority: UncheckedAccount<'info>,
+    
     #[account(
         mut,
         seeds = [b"fraction_config", fraction_config.authority.key().as_ref(), fraction_config.name.as_ref()],
-        bump = fraction_config.bump,
+        bump = fraction_config.config_bump,
         constraint = fraction_config.authority == authority.key() @ FractionError::InvalidAuthority,
         constraint = fraction_config.bot_wallet == bot_wallet.key() @ FractionError::InvalidBot,
     )]
-    pub fraction_config: Box<Account<'info, FractionConfig>>,
+    pub fraction_config: Account<'info, FractionConfig>,
 
-    #[account(mut, associated_token::mint = treasury_mint, associated_token::authority = fraction_config, associated_token::token_program = token_program)]
+    #[account(
+        mut,
+        seeds = [b"fraction_vault", fraction_config.authority.key().as_ref(), fraction_config.name.as_ref()],
+        bump = fraction_config.vault_bump,
+    )]
+    pub fraction_vault: SystemAccount<'info>,
+
+    #[account(
+        mut, 
+        associated_token::mint = treasury_mint, 
+        associated_token::authority = fraction_vault,
+        associated_token::token_program = token_program
+    )]
     pub treasury: InterfaceAccount<'info, TokenAccount>,
 
     pub treasury_mint: InterfaceAccount<'info, Mint>,
-    //superfluous checks
+    
     #[account(mut, token::mint = treasury_mint.key(),constraint = bot_token_account.owner == bot_wallet.key() @ FractionError::InvalidAccount)]
     pub bot_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(mut, token::mint = treasury_mint.key(),constraint = participant_token_account_0.owner == fraction_config.participants[0].wallet @ FractionError::InvalidAccount)]
@@ -48,15 +61,15 @@ impl<'info> ClaimAndDistribute<'info> {
     pub fn claim_and_distribute(&mut self) -> Result<()> {
         let authority_key = self.fraction_config.authority.key();
         let name = self.fraction_config.name.clone();
-        let bump = self.fraction_config.bump;
+        let vault_bump = self.fraction_config.vault_bump;
 
-        let signer_seeds = &[
-            b"fraction_config" as &[u8],
+        let vault_signer_seeds = &[
+            b"fraction_vault",
             authority_key.as_ref(),
             name.as_ref(),
-            &[bump],
+            &[vault_bump],
         ];
-        let signer = &[&signer_seeds[..]];
+        let vault_signer = &[&vault_signer_seeds[..]];
 
         if self.treasury_mint.key() == WSOL_MINT {
             let sol_balance = self.treasury.to_account_info().lamports();
@@ -66,7 +79,7 @@ impl<'info> ClaimAndDistribute<'info> {
 
         let treasury_balance = self.treasury.amount;
         require!(treasury_balance > 0, FractionError::NoFundsToDistribute);
-        return self.perform_token_distribution(treasury_balance, signer);
+        return self.perform_token_distribution(treasury_balance, vault_signer);
     }
 
     fn sync_native(&self) -> Result<()> {
@@ -79,8 +92,7 @@ impl<'info> ClaimAndDistribute<'info> {
         Ok(())
     }
 
-    fn perform_token_distribution(&self, treasury_balance: u64, signer: &[&[&[u8]]]) -> Result<()> {
-        // Calculate bot amount
+    fn perform_token_distribution(&self, treasury_balance: u64, vault_signer: &[&[&[u8]]]) -> Result<()> {
         let bot_amount = treasury_balance
             .checked_mul(self.fraction_config.incentive_bps as u64)
             .and_then(|x| x.checked_div(10_000))
@@ -98,9 +110,9 @@ impl<'info> ClaimAndDistribute<'info> {
                         from: self.treasury.to_account_info(),
                         mint: self.treasury_mint.to_account_info(),
                         to: self.bot_token_account.to_account_info(),
-                        authority: self.fraction_config.to_account_info(),
+                        authority: self.fraction_vault.to_account_info(),
                     },
-                    signer,
+                    vault_signer,
                 ),
                 bot_amount,
                 self.treasury_mint.decimals,
@@ -137,9 +149,9 @@ impl<'info> ClaimAndDistribute<'info> {
                                 from: self.treasury.to_account_info(),
                                 mint: self.treasury_mint.to_account_info(),
                                 to: participant_token_account.to_account_info(),
-                                authority: self.fraction_config.to_account_info(),
+                                authority: self.fraction_vault.to_account_info(),
                             },
-                            signer,
+                            vault_signer,
                         ),
                         participant_share,
                         self.treasury_mint.decimals,

@@ -10,7 +10,14 @@
     {
       "name": "claim_and_distribute",
       "discriminator": [
-        3
+        111,
+        147,
+        210,
+        144,
+        253,
+        16,
+        187,
+        238
       ],
       "accounts": [
         {
@@ -60,13 +67,50 @@
           }
         },
         {
+          "name": "fraction_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  114,
+                  97,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "fraction_config.authority",
+                "account": "FractionConfig"
+              },
+              {
+                "kind": "account",
+                "path": "fraction_config.name",
+                "account": "FractionConfig"
+              }
+            ]
+          }
+        },
+        {
           "name": "treasury",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "fraction_config"
+                "path": "fraction_vault"
               },
               {
                 "kind": "account",
@@ -156,7 +200,14 @@
     {
       "name": "initialize_fraction",
       "discriminator": [
-        1
+        159,
+        21,
+        140,
+        42,
+        52,
+        59,
+        103,
+        82
       ],
       "accounts": [
         {
@@ -187,6 +238,41 @@
                   102,
                   105,
                   103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "arg",
+                "path": "name"
+              }
+            ]
+          }
+        },
+        {
+          "name": "fraction_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  114,
+                  97,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
                 ]
               },
               {
@@ -232,7 +318,14 @@
     {
       "name": "update_fraction",
       "discriminator": [
-        2
+        176,
+        173,
+        246,
+        104,
+        94,
+        102,
+        30,
+        180
       ],
       "accounts": [
         {
@@ -306,7 +399,14 @@
     {
       "name": "FractionConfig",
       "discriminator": [
-        1
+        164,
+        123,
+        52,
+        71,
+        72,
+        174,
+        132,
+        174
       ]
     }
   ],
@@ -398,7 +498,11 @@
             "type": "u8"
           },
           {
-            "name": "bump",
+            "name": "vault_bump",
+            "type": "u8"
+          },
+          {
+            "name": "config_bump",
             "type": "u8"
           }
         ]

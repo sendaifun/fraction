@@ -7,8 +7,23 @@ pub struct InitializeFraction<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    #[account(init, payer = authority, space = 1 + FractionConfig::INIT_SPACE, seeds = [b"fraction_config", authority.key().as_ref(), name.as_ref()], bump)]
-    pub fraction_config: Box<Account<'info, FractionConfig>>,
+    // Config PDA (program-owned) - stores your FractionConfig data
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + FractionConfig::INIT_SPACE,
+        seeds = [b"fraction_config", authority.key().as_ref(), name.as_ref()],
+        bump
+    )]
+    pub fraction_config: Account<'info, FractionConfig>,
+
+    // Vault PDA (system-owned) - holds SOL and can have ATAs
+    #[account(
+        mut,
+        seeds = [b"fraction_vault", authority.key().as_ref(), name.as_ref()],
+        bump
+    )]
+    pub fraction_vault: SystemAccount<'info>,
 
     pub system_program: Program<'info, System>,
 }
@@ -61,7 +76,8 @@ impl<'info> InitializeFraction<'info> {
             participants,
             bot_wallet,
             incentive_bps: 5u8,
-            bump: bumps.fraction_config,
+            vault_bump: bumps.fraction_vault,
+            config_bump: bumps.fraction_config,
         });
 
         Ok(())

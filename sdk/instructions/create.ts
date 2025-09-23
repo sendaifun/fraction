@@ -20,6 +20,15 @@ async function createFractionIx(program: Program<Fraction>, input: CreatorFracti
         programId
     );
 
+    const [fractionVaultPda] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("fraction_vault"),
+          authority.toBuffer(),
+          Buffer.from(fractionName),
+        ],
+        program.programId
+      );
+
     participants.forEach(participant => {
         if (!participant.wallet) {
             throw new Error("Participant wallet is required")
@@ -38,11 +47,12 @@ async function createFractionIx(program: Program<Fraction>, input: CreatorFracti
         botWallet,
     ).accountsStrict({
         authority,
+        fractionVault: fractionVaultPda,
         fractionConfig: fractionConfigPda,
         systemProgram: SystemProgram.programId,
     }).instruction()
 
-    return {ix, fractionConfigPda}
+    return {ix, fractionConfigPda, fractionVaultPda}
 }
 
 /**
@@ -53,7 +63,7 @@ async function createFractionIx(program: Program<Fraction>, input: CreatorFracti
  * @returns The transaction
  */
 async function createFraction(program: Program<Fraction>, input: CreatorFractionInputArgs, connection?: Connection, payer?: PublicKey) {
-    const {ix, fractionConfigPda} = await createFractionIx(program, input)
+    const {ix, fractionConfigPda, fractionVaultPda} = await createFractionIx(program, input)
 
     if (connection && payer) {
         const { blockhash } = await connection.getLatestBlockhash()
@@ -64,10 +74,10 @@ async function createFraction(program: Program<Fraction>, input: CreatorFraction
         }).compileToV0Message();
 
         const tx = new VersionedTransaction(messageV0)
-        return {tx, fractionConfigPda}
+        return {tx, fractionConfigPda, fractionVaultPda}
     } else {
         const tx = new Transaction().add(ix)
-        return {tx, fractionConfigPda}
+        return {tx, fractionConfigPda, fractionVaultPda}
     }
 }
 

@@ -8,7 +8,7 @@ pub struct UpdateFraction<'info> {
     #[account(
         mut,
         seeds = [b"fraction_config", fraction_config.authority.key().as_ref(), fraction_config.name.as_ref()],
-        bump = fraction_config.bump,   
+        bump = fraction_config.config_bump,   
         has_one = authority,
     )]
     pub fraction_config: Box<Account<'info, FractionConfig>>,

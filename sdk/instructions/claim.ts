@@ -41,10 +41,20 @@ async function claimAndDistributeIx(program: Program<Fraction>, config: PublicKe
         true
     )
 
+    const [fractionVaultPda] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("fraction_vault"),
+          fraction.authority.toBuffer(),
+          Buffer.from(fraction.name),
+        ],
+        program.programId
+      );
+
     const ix = await program.methods.claimAndDistribute().accountsStrict({
         authority: fraction.authority,
         botWallet: fraction.botWallet,
         fractionConfig: config,
+        fractionVault: fractionVaultPda,
         treasury: treasuryAssociatedTokenAccount,
         treasuryMint: mint,
         botTokenAccount: botAssociatedTokenAccount,

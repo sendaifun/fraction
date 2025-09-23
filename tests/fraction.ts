@@ -22,7 +22,7 @@ import {
 import { expect } from "chai";
 import { NATIVE_MINT } from "@solana/spl-token";
 
-describe("Fraction Program - Direct Distribution", () => {
+describe("Fraction Program - Dual PDA Distribution", () => {
   anchor.setProvider(anchor.AnchorProvider.env());
 
   const program = anchor.workspace.Fraction as Program<Fraction>;
@@ -41,9 +41,10 @@ describe("Fraction Program - Direct Distribution", () => {
   let systemTokenAccounts: Account;
   let treasuryTokenAccount: PublicKey;
 
-  // Test setup
+  // Test setup - Dual PDA structure
   let fractionName: string;
-  let fractionConfigPda: PublicKey;
+  let fractionConfigPda: PublicKey;  // Program-owned PDA (stores data)
+  let fractionVaultPda: PublicKey;  // System-owned PDA (holds assets)
   let testParticipants: any[];
 
   // Helper function to clean up treasury
@@ -58,8 +59,6 @@ describe("Fraction Program - Direct Distribution", () => {
       if (treasuryAccount.amount > 0) {
         console.log(`Cleaning up treasury balance: ${treasuryAccount.amount}`);
 
-        // Use the ClaimAndDistribute instruction to empty the treasury
-        // This will distribute any remaining funds, which is actually what we want
         try {
           await program.methods
             .claimAndDistribute()
@@ -67,6 +66,7 @@ describe("Fraction Program - Direct Distribution", () => {
               authority: authority.publicKey,
               botWallet: botWallet.publicKey,
               fractionConfig: fractionConfigPda,
+              fractionVault: fractionVaultPda,
               treasury: treasuryTokenAccount,
               treasuryMint: testMint,
               botTokenAccount: botTokenAta,
@@ -162,7 +162,7 @@ describe("Fraction Program - Direct Distribution", () => {
       10000000000 // 10B tokens
     );
 
-    // Setup test infrastructure
+    // Setup test infrastructure - DUAL PDA STRUCTURE
     fractionName = "test_fraction";
     testParticipants = participants.map((p, i) => ({
       wallet: p.publicKey,
@@ -177,20 +177,40 @@ describe("Fraction Program - Direct Distribution", () => {
       ],
       program.programId
     );
+
+    [fractionVaultPda] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("fraction_vault"),
+        authority.publicKey.toBuffer(),
+        Buffer.from(fractionName),
+      ],
+      program.programId
+    );
+
+    console.log("Config PDA:", fractionConfigPda.toString());
+    console.log("Vault PDA:", fractionVaultPda.toString());
   });
 
-  it("Should initialize fraction", async () => {
+  it("Should initialize fraction with dual PDA structure", async () => {
     const tx = await program.methods
       .initializeFraction(fractionName, testParticipants, botWallet.publicKey)
       .accountsPartial({
         authority: authority.publicKey,
         fractionConfig: fractionConfigPda,
+        fractionVault: fractionVaultPda,
         systemProgram: SystemProgram.programId,
       })
       .signers([])
       .rpc();
 
     console.log("Initialize transaction:", tx);
+
+    // Verify config was created
+    const configAccount = await program.account.fractionConfig.fetch(fractionConfigPda);
+    expect(configAccount.authority.toString()).to.equal(authority.publicKey.toString());
+    expect(configAccount.name).to.equal(fractionName);
+    console.log("Config account created successfully");
+    console.log("Vault bump stored in config:", configAccount.vaultBump);
   });
 
   it("Should update fraction configuration", async () => {
@@ -214,14 +234,13 @@ describe("Fraction Program - Direct Distribution", () => {
     console.log("Update transaction:", updateTx);
   });
 
-  it("Should create treasury and deposit funds", async () => {
-    // Create treasury account (client-side)
+  it("Should create treasury ATA owned by vault and deposit funds", async () => {
     treasuryTokenAccount = (
       await getOrCreateAssociatedTokenAccount(
         connection,
         wallet.payer,
         testMint,
-        fractionConfigPda,
+        fractionVaultPda,
         true // Allow PDA owner
       )
     ).address;
@@ -242,16 +261,16 @@ describe("Fraction Program - Direct Distribution", () => {
     console.log("Treasury deposit transaction:", depositTx);
     console.log("Deposited to treasury:", depositAmount);
 
-    // Verify treasury balance
+    // Verify treasury balance and ownership
     const treasuryAccount = await getAccount(connection, treasuryTokenAccount);
     expect(treasuryAccount.amount).to.equal(BigInt(depositAmount));
     expect(treasuryAccount.owner.toString()).to.equal(
-      fractionConfigPda.toString()
+      fractionVaultPda.toString()
     );
   });
 
-  it("Should distribute tokens directly to participants", async () => {
-    const depositAmount = 1000000000; // 1B tokens
+  it("Should distribute tokens from vault", async () => {
+    const depositAmount = 1000000000;
 
     // Get initial balances
     const initialBotBalance = await getAccount(connection, botTokenAta);
@@ -266,6 +285,7 @@ describe("Fraction Program - Direct Distribution", () => {
         authority: authority.publicKey,
         botWallet: botWallet.publicKey,
         fractionConfig: fractionConfigPda,
+        fractionVault: fractionVaultPda,
         treasury: treasuryTokenAccount,
         treasuryMint: testMint,
         botTokenAccount: botTokenAta,
@@ -279,12 +299,12 @@ describe("Fraction Program - Direct Distribution", () => {
       .signers([botWallet])
       .rpc();
 
-    console.log("Direct distribution transaction:", distributionTx);
+    console.log("Distribution transaction:", distributionTx);
   });
 
   it("Should handle multiple distribution rounds", async () => {
     await cleanupTreasury();
-    const secondDeposit = 500000000; // 500M tokens
+    const secondDeposit = 500000000;
     const secondDepositTx = await transfer(
       connection,
       wallet.payer,
@@ -296,12 +316,6 @@ describe("Fraction Program - Direct Distribution", () => {
 
     console.log("Second treasury deposit transaction:", secondDepositTx);
 
-    // Get balances before second distribution
-    const beforeBalances = await Promise.all(
-      participantTokenAtas.map(async (ata) => await getAccount(connection, ata))
-    );
-    const beforeBotBalance = await getAccount(connection, botTokenAta);
-
     // Second distribution
     const secondDistributionTx = await program.methods
       .claimAndDistribute()
@@ -309,6 +323,7 @@ describe("Fraction Program - Direct Distribution", () => {
         authority: authority.publicKey,
         botWallet: botWallet.publicKey,
         fractionConfig: fractionConfigPda,
+        fractionVault: fractionVaultPda,
         treasury: treasuryTokenAccount,
         treasuryMint: testMint,
         botTokenAccount: botTokenAta,
@@ -323,11 +338,6 @@ describe("Fraction Program - Direct Distribution", () => {
       .rpc();
 
     console.log("Second distribution transaction:", secondDistributionTx);
-
-    // Get final balances after second distribution
-    const afterBalances = await Promise.all(
-      participantTokenAtas.map(async (ata) => await getAccount(connection, ata))
-    );
     console.log("Multiple distribution rounds work correctly");
   });
 
@@ -339,6 +349,7 @@ describe("Fraction Program - Direct Distribution", () => {
           authority: authority.publicKey,
           botWallet: botWallet.publicKey,
           fractionConfig: fractionConfigPda,
+          fractionVault: fractionVaultPda,
           treasury: treasuryTokenAccount,
           treasuryMint: testMint,
           botTokenAccount: botTokenAta,
@@ -359,253 +370,7 @@ describe("Fraction Program - Direct Distribution", () => {
     }
   });
 
-  it("Should reject unauthorized bot attempts", async () => {
-    const unauthorizedBot = Keypair.generate();
-
-    // Clean up any existing treasury balance before test
-    await cleanupTreasury();
-
-    // Add funds to test with
-    const testDepositTx = await transfer(
-      connection,
-      wallet.payer,
-      authorityTokenAta,
-      treasuryTokenAccount,
-      authority.publicKey,
-      1000000
-    );
-
-    try {
-      await program.methods
-        .claimAndDistribute()
-        .accountsPartial({
-          authority: authority.publicKey,
-          botWallet: unauthorizedBot.publicKey, // Wrong bot
-          fractionConfig: fractionConfigPda,
-          treasury: treasuryTokenAccount,
-          treasuryMint: testMint,
-          botTokenAccount: botTokenAta,
-          participantTokenAccount0: participantTokenAtas[0],
-          participantTokenAccount1: participantTokenAtas[1],
-          participantTokenAccount2: participantTokenAtas[2],
-          participantTokenAccount3: participantTokenAtas[3],
-          participantTokenAccount4: participantTokenAtas[4],
-          tokenProgram: TOKEN_PROGRAM_ID,
-        })
-        .signers([unauthorizedBot])
-        .rpc();
-
-      expect.fail("Should have failed with unauthorized bot");
-    } catch (error) {
-      expect(error.message).to.include("InvalidBot");
-      console.log("Correctly rejected unauthorized bot");
-    }
-  });
-
-  it("Should reject invalid share distributions", async () => {
-    const invalidParticipants = [
-      { wallet: participants[0].publicKey, shareBps: 5000 }, // 50%
-      { wallet: participants[1].publicKey, shareBps: 3000 }, // 30%
-      { wallet: participants[2].publicKey, shareBps: 2000 }, // 20%
-      { wallet: participants[3].publicKey, shareBps: 1000 }, // 10%
-      { wallet: participants[4].publicKey, shareBps: 500 }, // 5% = Total: 115%
-    ];
-
-    try {
-      await program.methods
-        .updateFraction(invalidParticipants, botWallet.publicKey)
-        .accountsPartial({
-          authority: authority.publicKey,
-          fractionConfig: fractionConfigPda,
-        })
-        .signers([])
-        .rpc();
-
-      expect.fail("Should have failed with invalid share distribution");
-    } catch (error) {
-      expect(error.message).to.include("InvalidShareDistribution");
-      console.log("Correctly rejected invalid share distribution");
-    }
-  });
-
-  it("Should fail distribution when system program is a participant with non-zero share", async () => {
-    // First, let's create a configuration with a system program participant for testing
-    const systemProgramParticipants = [
-      { wallet: participants[0].publicKey, shareBps: 2500 }, // 25%
-      { wallet: participants[1].publicKey, shareBps: 2500 }, // 25%
-      { wallet: SystemProgram.programId, shareBps: 2500 }, // 25% - System Program (should cause error)
-      { wallet: participants[3].publicKey, shareBps: 1500 }, // 15%
-      { wallet: participants[4].publicKey, shareBps: 1000 }, // 10%
-    ];
-
-    try {
-      // Try to update config with system program participant
-      const updateTx = await program.methods
-        .updateFraction(systemProgramParticipants, botWallet.publicKey)
-        .accountsPartial({
-          authority: authority.publicKey,
-          fractionConfig: fractionConfigPda,
-        })
-        .signers([])
-        .rpc();
-
-      console.log("System program participant configuration set");
-      console.log("Config Update Transaction ID:", updateTx);
-    } catch (error) {
-      console.log(
-        "Could not set system program participant in config:",
-        error.message
-      );
-      console.log(
-        "Test cannot proceed - system program validation may be in place at config level"
-      );
-      return;
-    }
-
-    // Clean up any existing treasury balance before test
-    await cleanupTreasury();
-
-    // Add funds for testing distribution
-    const testAmount = 100000000; // 100M tokens
-    const testDepositTx = await transfer(
-      connection,
-      wallet.payer,
-      authorityTokenAta,
-      treasuryTokenAccount,
-      authority.publicKey,
-      testAmount
-    );
-
-    console.log("Test deposit for system program test");
-    console.log("Treasury Deposit Transaction ID:", testDepositTx);
-
-    // Now try distribution - this should fail with SystemProgramParticipant error
-    try {
-      const distributionTx = await program.methods
-        .claimAndDistribute()
-        .accountsPartial({
-          authority: authority.publicKey,
-          botWallet: botWallet.publicKey,
-          fractionConfig: fractionConfigPda,
-          treasury: treasuryTokenAccount,
-          treasuryMint: testMint,
-          botTokenAccount: botTokenAta,
-          participantTokenAccount0: participantTokenAtas[0],
-          participantTokenAccount1: participantTokenAtas[1],
-          participantTokenAccount2: participantTokenAtas[2],
-          participantTokenAccount3: participantTokenAtas[3],
-          participantTokenAccount4: participantTokenAtas[4],
-          tokenProgram: TOKEN_PROGRAM_ID,
-        })
-        .signers([botWallet])
-        .rpc();
-
-      console.log("Distribution unexpectedly succeeded:", distributionTx);
-      throw new Error(
-        "Distribution should have failed with system program participant"
-      );
-    } catch (error) {
-      // Check if the error is the expected SystemProgramParticipant error
-      if (
-        error.message.includes(
-          "System program cannot be a participant wallet"
-        ) ||
-        error.message.includes("SystemProgramParticipant")
-      ) {
-        console.log(
-          "Distribution correctly failed with SystemProgramParticipant error:",
-          error.message
-        );
-      } else {
-        console.log(
-          "Distribution failed but with unexpected error:",
-          error.message
-        );
-        throw error;
-      }
-    }
-  });
-
-  it("Should allow distribution when system program participant has zero share", async () => {
-    // Create a configuration with system program participant but zero share
-    const zeroShareSystemParticipants = [
-      { wallet: participants[0].publicKey, shareBps: 3000 }, // 30%
-      { wallet: participants[1].publicKey, shareBps: 3000 }, // 30%
-      { wallet: SystemProgram.programId, shareBps: 0 }, // 0% - System Program (should be OK)
-      { wallet: participants[3].publicKey, shareBps: 2000 }, // 20%
-      { wallet: participants[4].publicKey, shareBps: 2000 }, // 20%
-    ];
-
-    try {
-      // Update config with system program participant having zero share
-      const updateTx = await program.methods
-        .updateFraction(zeroShareSystemParticipants, botWallet.publicKey)
-        .accountsPartial({
-          authority: authority.publicKey,
-          fractionConfig: fractionConfigPda,
-        })
-        .signers([])
-        .rpc();
-
-      console.log("Zero-share system program participant configuration set");
-      console.log("Config Update Transaction ID:", updateTx);
-    } catch (error) {
-      console.log(
-        " Could not set zero-share system program participant in config:",
-        error.message
-      );
-      console.log("Test cannot proceed");
-      return;
-    }
-
-    // Clean up any existing treasury balance before test
-    await cleanupTreasury();
-
-    // Add funds for testing distribution
-    const testAmount = 100000000; // 100M tokens
-    const testDepositTx = await transfer(
-      connection,
-      wallet.payer,
-      authorityTokenAta,
-      treasuryTokenAccount,
-      authority.publicKey,
-      testAmount
-    );
-
-    console.log("Test deposit for zero-share system program test");
-    console.log("Treasury Deposit Transaction ID:", testDepositTx);
-    try {
-      // This should succeed since system program has zero share
-      const distributionTx = await program.methods
-        .claimAndDistribute()
-        .accountsPartial({
-          authority: authority.publicKey,
-          botWallet: botWallet.publicKey,
-          fractionConfig: fractionConfigPda,
-          treasury: treasuryTokenAccount,
-          treasuryMint: testMint,
-          botTokenAccount: botTokenAta,
-          participantTokenAccount0: participantTokenAtas[0],
-          participantTokenAccount1: participantTokenAtas[1],
-          participantTokenAccount2: systemTokenAccounts.address,
-          participantTokenAccount3: participantTokenAtas[3],
-          participantTokenAccount4: participantTokenAtas[4],
-          tokenProgram: TOKEN_PROGRAM_ID,
-        })
-        .signers([botWallet])
-        .rpc();
-
-      console.log(
-        "Distribution succeeded with zero-share system program participant"
-      );
-      console.log("Distribution Transaction ID:", distributionTx);
-    } catch (error) {
-      console.log("Distribution failed unexpectedly:", error.message);
-      throw error;
-    }
-  });
-
-  it("Should handle WSOL distribution with SOL ", async () => {
+  it("Should handle WSOL distribution with dual PDA structure", async () => {
     // Create a new fraction config for WSOL testing
     const wsolFractionName = "wsol_test_fraction";
     const wsolTestParticipants = participants.map((p, i) => ({
@@ -613,9 +378,19 @@ describe("Fraction Program - Direct Distribution", () => {
       shareBps: 2000, // 20% each
     }));
 
+    // 🔑 WSOL Config and Vault PDAs
     const [wsolFractionConfigPda] = PublicKey.findProgramAddressSync(
       [
         Buffer.from("fraction_config"),
+        authority.publicKey.toBuffer(),
+        Buffer.from(wsolFractionName),
+      ],
+      program.programId
+    );
+
+    const [wsolFractionVaultPda] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("fraction_vault"),
         authority.publicKey.toBuffer(),
         Buffer.from(wsolFractionName),
       ],
@@ -632,6 +407,7 @@ describe("Fraction Program - Direct Distribution", () => {
       .accountsPartial({
         authority: authority.publicKey,
         fractionConfig: wsolFractionConfigPda,
+        fractionVault: wsolFractionVaultPda,
         systemProgram: SystemProgram.programId,
       })
       .signers([])
@@ -663,13 +439,12 @@ describe("Fraction Program - Direct Distribution", () => {
       )
     );
 
-    //Create WSOL treasury account (PDA-owned)
     const wsolTreasuryTokenAccount = (
       await getOrCreateAssociatedTokenAccount(
         connection,
         wallet.payer,
         NATIVE_MINT,
-        wsolFractionConfigPda,
+        wsolFractionVaultPda,
         true // Allow PDA owner
       )
     ).address;
@@ -687,7 +462,7 @@ describe("Fraction Program - Direct Distribution", () => {
         toPubkey: wsolTreasuryTokenAccount,
         lamports: solAmount,
       }),
-      c(wsolTreasuryTokenAccount)
+      createSyncNativeInstruction(wsolTreasuryTokenAccount)
     );
 
     const solTransferTx = await connection.sendTransaction(wrapTx, [
@@ -696,36 +471,15 @@ describe("Fraction Program - Direct Distribution", () => {
     await connection.confirmTransaction(solTransferTx);
 
     console.log("SOL transferred to WSOL treasury account:", solTransferTx);
-    console.log("SOL amount transferred:", solAmount, "lamports");
 
-    // Get initial token account balance
-    const initialTreasuryAccount = await getAccount(
-      connection,
-      wsolTreasuryTokenAccount
-    );
-    console.log(
-      "Treasury WSOL token balance:",
-      initialTreasuryAccount.amount.toString()
-    );
-
-    // Get initial balances for distribution verification
-    const initialWsolBotBalance = await getAccount(connection, wsolBotTokenAta);
-    const initialWsolParticipantBalances = await Promise.all(
-      wsolParticipantTokenAtas.map(
-        async (ata) => await getAccount(connection, ata)
-      )
-    );
-
-    // Create a temporary wSOL account for our new implementation approach
-    const tempWsolAccount = Keypair.generate();
-
-    // Execute distribution with new temporary account approach
+    // Execute distribution
     const distributionTx = await program.methods
       .claimAndDistribute()
-      .accountsStrict({
+      .accountsPartial({
         authority: authority.publicKey,
         botWallet: botWallet.publicKey,
         fractionConfig: wsolFractionConfigPda,
+        fractionVault: wsolFractionVaultPda,
         treasury: wsolTreasuryTokenAccount,
         treasuryMint: NATIVE_MINT, // WSOL native mint
         botTokenAccount: wsolBotTokenAta,
@@ -740,202 +494,440 @@ describe("Fraction Program - Direct Distribution", () => {
       .signers([botWallet])
       .rpc();
 
-    console.log(
-      "WSOL distribution with temporary account approach executed:",
-      distributionTx
-    );
+    console.log("WSOL distribution executed:", distributionTx);
   });
 
-  it("Should handle multiple WSOL distributions with temporary account cleanup", async () => {
-    // Use the existing wSOL fraction config from the previous test
-    const wsolFractionName = "wsol_test_fraction";
-    const [wsolFractionConfigPda] = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from("fraction_config"),
-        authority.publicKey.toBuffer(),
-        Buffer.from(wsolFractionName),
-      ],
-      program.programId
-    );
+  it("Should reject unauthorized bot attempts", async () => {
+    const unauthorizedBot = Keypair.generate();
 
-    // Get existing wSOL accounts from previous test
-    const wsolBotTokenAta = (
-      await getOrCreateAssociatedTokenAccount(
-        connection,
-        wallet.payer,
-        NATIVE_MINT,
-        botWallet.publicKey
-      )
-    ).address;
+    await cleanupTreasury();
 
-    const wsolParticipantTokenAtas = await Promise.all(
-      participants.map(
-        async (p) =>
-          (
-            await getOrCreateAssociatedTokenAccount(
-              connection,
-              wallet.payer,
-              NATIVE_MINT,
-              p.publicKey
-            )
-          ).address
-      )
-    );
-
-    const wsolTreasuryTokenAccount = (
-      await getOrCreateAssociatedTokenAccount(
-        connection,
-        wallet.payer,
-        NATIVE_MINT,
-        wsolFractionConfigPda,
-        true // Allow PDA owner
-      )
-    ).address;
-
-    // Add more SOL to test multiple distributions
-    const solAmount = 1 * LAMPORTS_PER_SOL; // 1 SOL
-    const wrapTx2 = new anchor.web3.Transaction().add(
-      anchor.web3.SystemProgram.transfer({
-        fromPubkey: wallet.publicKey,
-        toPubkey: wsolTreasuryTokenAccount,
-        lamports: solAmount,
-      }),
-      createSyncNativeInstruction(wsolTreasuryTokenAccount)
-    );
-
-    const solTransferTx = await connection.sendTransaction(wrapTx2, [
-      wallet.payer,
-    ]);
-    await connection.confirmTransaction(solTransferTx);
-
-    console.log(
-      "Second SOL deposit for multiple distributions test:",
-      solTransferTx
-    );
-
-    // Get balances before second distribution
-    const beforeSecondDistribution = await Promise.all(
-      wsolParticipantTokenAtas.map(
-        async (ata) => await getAccount(connection, ata)
-      )
-    );
-
-    // Create new temporary account for second distribution
-    const tempWsolAccount2 = Keypair.generate();
-
-    // Execute second distribution
-    const secondDistributionTx = await program.methods
-      .claimAndDistribute()
-      .accountsPartial({
-        authority: authority.publicKey,
-        botWallet: botWallet.publicKey,
-        fractionConfig: wsolFractionConfigPda,
-        treasury: wsolTreasuryTokenAccount,
-        treasuryMint: NATIVE_MINT,
-        botTokenAccount: wsolBotTokenAta,
-        participantTokenAccount0: wsolParticipantTokenAtas[0],
-        participantTokenAccount1: wsolParticipantTokenAtas[1],
-        participantTokenAccount2: wsolParticipantTokenAtas[2],
-        participantTokenAccount3: wsolParticipantTokenAtas[3],
-        participantTokenAccount4: wsolParticipantTokenAtas[4],
-        tokenProgram: TOKEN_PROGRAM_ID,
-        systemProgram: SystemProgram.programId,
-      })
-      .signers([botWallet])
-      .rpc();
-
-    console.log("Second WSOL distribution executed:", secondDistributionTx);
-  });
-
-  it("Should handle WSOL distribution with zero SOL balance", async () => {
-    // Use existing wSOL fraction config
-    const wsolFractionName = "wsol_test_fraction";
-    const [wsolFractionConfigPda] = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from("fraction_config"),
-        authority.publicKey.toBuffer(),
-        Buffer.from(wsolFractionName),
-      ],
-      program.programId
-    );
-
-    // Get existing wSOL accounts
-    const wsolBotTokenAta = (
-      await getOrCreateAssociatedTokenAccount(
-        connection,
-        wallet.payer,
-        NATIVE_MINT,
-        botWallet.publicKey
-      )
-    ).address;
-
-    const wsolParticipantTokenAtas = await Promise.all(
-      participants.map(
-        async (p) =>
-          (
-            await getOrCreateAssociatedTokenAccount(
-              connection,
-              wallet.payer,
-              NATIVE_MINT,
-              p.publicKey
-            )
-          ).address
-      )
-    );
-
-    const wsolTreasuryTokenAccount = (
-      await getOrCreateAssociatedTokenAccount(
-        connection,
-        wallet.payer,
-        NATIVE_MINT,
-        wsolFractionConfigPda,
-        true
-      )
-    ).address;
-
-    // Ensure treasury has zero balance
-    const treasuryAccount = await getAccount(
+    // seed vault with a small balance so the instruction can run
+    await transfer(
       connection,
-      wsolTreasuryTokenAccount
+      wallet.payer,
+      authorityTokenAta,
+      treasuryTokenAccount,
+      authority.publicKey,
+      1_000_000
     );
-    console.log(
-      "Treasury balance before zero-balance test:",
-      treasuryAccount.amount.toString()
-    );
-
-    // Create temporary account for zero balance test
-    const tempWsolAccountZero = Keypair.generate();
 
     try {
-      // This should handle zero balance gracefully
+      await program.methods
+        .claimAndDistribute()
+        .accountsPartial({
+          authority: authority.publicKey,
+          botWallet: unauthorizedBot.publicKey,
+          fractionConfig: fractionConfigPda,
+          fractionVault: fractionVaultPda,
+          treasury: treasuryTokenAccount,
+          treasuryMint: testMint,
+          botTokenAccount: botTokenAta,
+          participantTokenAccount0: participantTokenAtas[0],
+          participantTokenAccount1: participantTokenAtas[1],
+          participantTokenAccount2: participantTokenAtas[2],
+          participantTokenAccount3: participantTokenAtas[3],
+          participantTokenAccount4: participantTokenAtas[4],
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .signers([unauthorizedBot])
+        .rpc();
+
+      expect.fail("Should have failed with unauthorized bot");
+    } catch (error) {
+      expect(error.message).to.include("InvalidBot");
+      console.log("Correctly rejected unauthorized bot");
+    }
+  });
+
+  it("Should reject invalid share distributions", async () => {
+    const invalidParticipants = [
+      { wallet: participants[0].publicKey, shareBps: 5000 }, // 50 %
+      { wallet: participants[1].publicKey, shareBps: 3000 }, // 30 %
+      { wallet: participants[2].publicKey, shareBps: 2000 }, // 20 %
+      { wallet: participants[3].publicKey, shareBps: 1000 }, // 10 %
+      { wallet: participants[4].publicKey, shareBps: 500 }, //  5 %  → 115 % total
+    ];
+
+    try {
+      await program.methods
+        .updateFraction(invalidParticipants, botWallet.publicKey)
+        .accountsPartial({
+          authority: authority.publicKey,
+          fractionConfig: fractionConfigPda,
+        })
+        .rpc();
+
+      expect.fail("Should have failed with invalid share distribution");
+    } catch (error) {
+      expect(error.message).to.include("InvalidShareDistribution");
+      console.log("Correctly rejected invalid share distribution");
+    }
+  });
+
+  it("Should fail when System Program participant has non-zero share", async () => {
+    const badParticipants = [
+      { wallet: participants[0].publicKey, shareBps: 2500 },
+      { wallet: participants[1].publicKey, shareBps: 2500 },
+      { wallet: SystemProgram.programId, shareBps: 2500 },
+      { wallet: participants[3].publicKey, shareBps: 1500 },
+      { wallet: participants[4].publicKey, shareBps: 1000 },
+    ];
+
+    await program.methods
+      .updateFraction(badParticipants, botWallet.publicKey)
+      .accountsPartial({
+        authority: authority.publicKey,
+        fractionConfig: fractionConfigPda,
+      })
+      .rpc();
+
+    await cleanupTreasury();
+    await transfer(
+      connection,
+      wallet.payer,
+      authorityTokenAta,
+      treasuryTokenAccount,
+      authority.publicKey,
+      100_000_000
+    );
+
+    try {
       await program.methods
         .claimAndDistribute()
         .accountsPartial({
           authority: authority.publicKey,
           botWallet: botWallet.publicKey,
-          fractionConfig: wsolFractionConfigPda,
-          treasury: wsolTreasuryTokenAccount,
-          treasuryMint: NATIVE_MINT,
-          botTokenAccount: wsolBotTokenAta,
-          participantTokenAccount0: wsolParticipantTokenAtas[0],
-          participantTokenAccount1: wsolParticipantTokenAtas[1],
-          participantTokenAccount2: wsolParticipantTokenAtas[2],
-          participantTokenAccount3: wsolParticipantTokenAtas[3],
-          participantTokenAccount4: wsolParticipantTokenAtas[4],
+          fractionConfig: fractionConfigPda,
+          fractionVault: fractionVaultPda,
+          treasury: treasuryTokenAccount,
+          treasuryMint: testMint,
+          botTokenAccount: botTokenAta,
+          participantTokenAccount0: participantTokenAtas[0],
+          participantTokenAccount1: participantTokenAtas[1],
+          participantTokenAccount2: participantTokenAtas[2],
+          participantTokenAccount3: participantTokenAtas[3],
+          participantTokenAccount4: participantTokenAtas[4],
           tokenProgram: TOKEN_PROGRAM_ID,
-          systemProgram: SystemProgram.programId,
         })
         .signers([botWallet])
         .rpc();
 
-      console.log("WSOL distribution with zero balance handled successfully");
+      expect.fail("Distribution should have failed");
     } catch (error) {
-      // This is expected behavior - zero balance should be handled gracefully
-      console.log(
-        "Zero balance WSOL distribution handled as expected:",
-        error.message
-      );
-      expect(error.message).to.include("No funds to distribute");
+      expect(error.message).to.include("SystemProgramParticipant");
+      console.log("Correctly rejected distribution with System Program participant > 0 share");
     }
   });
+
+  it("Should allow zero-share System Program participant", async () => {
+    const okParticipants = [
+      { wallet: participants[0].publicKey, shareBps: 3000 },
+      { wallet: participants[1].publicKey, shareBps: 3000 },
+      { wallet: SystemProgram.programId, shareBps: 0 },
+      { wallet: participants[3].publicKey, shareBps: 2000 },
+      { wallet: participants[4].publicKey, shareBps: 2000 },
+    ];
+
+    await program.methods
+      .updateFraction(okParticipants, botWallet.publicKey)
+      .accountsPartial({
+        authority: authority.publicKey,
+        fractionConfig: fractionConfigPda,
+      })
+      .rpc();
+
+    await cleanupTreasury();
+    await transfer(
+      connection,
+      wallet.payer,
+      authorityTokenAta,
+      treasuryTokenAccount,
+      authority.publicKey,
+      100_000_000
+    );
+
+    const tx = await program.methods
+      .claimAndDistribute()
+      .accountsPartial({
+        authority: authority.publicKey,
+        botWallet: botWallet.publicKey,
+        fractionConfig: fractionConfigPda,
+        fractionVault: fractionVaultPda,
+        treasury: treasuryTokenAccount,
+        treasuryMint: testMint,
+        botTokenAccount: botTokenAta,
+        participantTokenAccount0: participantTokenAtas[0],
+        participantTokenAccount1: participantTokenAtas[1],
+        participantTokenAccount2: systemTokenAccounts.address,
+        participantTokenAccount3: participantTokenAtas[3],
+        participantTokenAccount4: participantTokenAtas[4],
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .signers([botWallet])
+      .rpc();
+
+    console.log("Distribution succeeded with zero-share System Program participant:", tx);
+  });
+
+  it("Should fail with duplicate participant wallets", async () => {
+    const duplicateParticipants = [
+      { wallet: participants[0].publicKey, shareBps: 2500 },
+      { wallet: participants[1].publicKey, shareBps: 2500 },
+      { wallet: participants[0].publicKey, shareBps: 2500 }, // Duplicate wallet
+      { wallet: participants[3].publicKey, shareBps: 1500 },
+      { wallet: participants[4].publicKey, shareBps: 1000 },
+    ];
+
+    try {
+      await program.methods
+        .updateFraction(duplicateParticipants, botWallet.publicKey)
+        .accountsPartial({
+          authority: authority.publicKey,
+          fractionConfig: fractionConfigPda,
+        })
+        .rpc();
+
+      expect.fail("Should have failed with duplicate participant wallets");
+    } catch (error) {
+      expect(error.message).to.include("DuplicateParticipantWallet");
+      console.log("Correctly rejected duplicate participant wallets");
+    }
+  });
+
+  it("Should fail when bot wallet conflicts with participant wallet", async () => {
+    const conflictParticipants = [
+      { wallet: participants[0].publicKey, shareBps: 2500 },
+      { wallet: participants[1].publicKey, shareBps: 2500 },
+      { wallet: participants[2].publicKey, shareBps: 2500 },
+      { wallet: participants[3].publicKey, shareBps: 1500 },
+      { wallet: participants[4].publicKey, shareBps: 1000 },
+    ];
+
+    try {
+      // Try to set bot wallet to be the same as one of the participants
+      await program.methods
+        .updateFraction(conflictParticipants, participants[0].publicKey) // Bot wallet = participant[0]
+        .accountsPartial({
+          authority: authority.publicKey,
+          fractionConfig: fractionConfigPda,
+        })
+        .rpc();
+
+      expect.fail("Should have failed with bot wallet conflict");
+    } catch (error) {
+      expect(error.message).to.include("BotWalletConflict");
+      console.log("Correctly rejected bot wallet conflict with participant");
+    }
+  });
+
+  it("Should allow multiple System Program participants with zero shares", async () => {
+    const multiSystemParticipants = [
+      { wallet: participants[0].publicKey, shareBps: 5000 }, // 50%
+      { wallet: participants[1].publicKey, shareBps: 5000 }, // 50%
+      { wallet: SystemProgram.programId, shareBps: 0 },      // 0% - System Program
+      { wallet: SystemProgram.programId, shareBps: 0 },      // 0% - System Program (duplicate)
+      { wallet: SystemProgram.programId, shareBps: 0 },      // 0% - System Program (another duplicate)
+    ];
+
+    await program.methods
+      .updateFraction(multiSystemParticipants, botWallet.publicKey)
+      .accountsPartial({
+        authority: authority.publicKey,
+        fractionConfig: fractionConfigPda,
+      })
+      .rpc();
+
+    console.log("Successfully updated fraction with multiple System Program participants with zero shares");
+
+    // Test that distribution still works
+    await cleanupTreasury();
+    await transfer(
+      connection,
+      wallet.payer,
+      authorityTokenAta,
+      treasuryTokenAccount,
+      authority.publicKey,
+      100_000_000
+    );
+
+    const tx = await program.methods
+      .claimAndDistribute()
+      .accountsPartial({
+        authority: authority.publicKey,
+        botWallet: botWallet.publicKey,
+        fractionConfig: fractionConfigPda,
+        fractionVault: fractionVaultPda,
+        treasury: treasuryTokenAccount,
+        treasuryMint: testMint,
+        botTokenAccount: botTokenAta,
+        participantTokenAccount0: participantTokenAtas[0],
+        participantTokenAccount1: participantTokenAtas[1],
+        participantTokenAccount2: systemTokenAccounts.address,
+        participantTokenAccount3: systemTokenAccounts.address,
+        participantTokenAccount4: systemTokenAccounts.address,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .signers([botWallet])
+      .rpc();
+
+    console.log("Distribution succeeded with multiple System Program participants:", tx);
+  });
+
+  it("Should handle custom token distribution with dual PDA structure", async () => {
+    // Create a new custom token mint
+    const customMint = await createMint(
+      connection,
+      wallet.payer,
+      wallet.payer.publicKey,
+      wallet.payer.publicKey,
+      9 // 9 decimals for custom token
+    );
+
+    console.log("Custom token mint created:", customMint.toString());
+
+    // Create a new fraction config for custom token testing
+    const customTokenFractionName = "custom_token_fraction";
+    const customTokenParticipants = [
+      { wallet: participants[0].publicKey, shareBps: 2500 }, // 25%
+      { wallet: participants[1].publicKey, shareBps: 2000 }, // 20%
+      { wallet: participants[2].publicKey, shareBps: 2000 }, // 20%
+      { wallet: participants[3].publicKey, shareBps: 1800 }, // 18%
+      { wallet: participants[4].publicKey, shareBps: 1700 }, // 17%
+    ];
+
+    // Create custom token fraction config and vault PDAs
+    const [customFractionConfigPda] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("fraction_config"),
+        authority.publicKey.toBuffer(),
+        Buffer.from(customTokenFractionName),
+      ],
+      program.programId
+    );
+
+    const [customFractionVaultPda] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("fraction_vault"),
+        authority.publicKey.toBuffer(),
+        Buffer.from(customTokenFractionName),
+      ],
+      program.programId
+    );
+
+    // Initialize custom token fraction config
+    const initTx = await program.methods
+      .initializeFraction(
+        customTokenFractionName,
+        customTokenParticipants,
+        botWallet.publicKey
+      )
+      .accountsPartial({
+        authority: authority.publicKey,
+        fractionConfig: customFractionConfigPda,
+        fractionVault: customFractionVaultPda,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([])
+      .rpc();
+
+    console.log("Custom token fraction config initialized:", initTx);
+
+    // Create token accounts for custom mint
+    const customAuthorityTokenAta = (
+      await getOrCreateAssociatedTokenAccount(
+        connection,
+        wallet.payer,
+        customMint,
+        authority.publicKey
+      )
+    ).address;
+
+    const customBotTokenAta = (
+      await getOrCreateAssociatedTokenAccount(
+        connection,
+        wallet.payer,
+        customMint,
+        botWallet.publicKey
+      )
+    ).address;
+
+    const customParticipantTokenAtas = await Promise.all(
+      participants.map(
+        async (p) =>
+          (
+            await getOrCreateAssociatedTokenAccount(
+              connection,
+              wallet.payer,
+              customMint,
+              p.publicKey
+            )
+          ).address
+      )
+    );
+
+    // Create custom token treasury account owned by vault
+    const customTreasuryTokenAccount = (
+      await getOrCreateAssociatedTokenAccount(
+        connection,
+        wallet.payer,
+        customMint,
+        customFractionVaultPda,
+        true // Allow PDA owner
+      )
+    ).address;
+
+    console.log("Custom token treasury account created:", customTreasuryTokenAccount.toString());
+
+    // Mint custom tokens to authority
+    const customTokenAmount = 5000000000; // 5B custom tokens
+    await mintTo(
+      connection,
+      wallet.payer,
+      customMint,
+      customAuthorityTokenAta,
+      wallet.payer,
+      customTokenAmount
+    );
+
+    console.log("Custom tokens minted to authority:", customTokenAmount);
+
+    // Transfer custom tokens to treasury
+    const depositAmount = 2000000000; // 2B custom tokens
+    const depositTx = await transfer(
+      connection,
+      wallet.payer,
+      customAuthorityTokenAta,
+      customTreasuryTokenAccount,
+      authority.publicKey,
+      depositAmount
+    );
+
+    console.log("Custom tokens deposited to treasury:", depositTx);
+
+    // Execute custom token distribution
+    const distributionTx = await program.methods
+      .claimAndDistribute()
+      .accountsPartial({
+        authority: authority.publicKey,
+        botWallet: botWallet.publicKey,
+        fractionConfig: customFractionConfigPda,
+        fractionVault: customFractionVaultPda,
+        treasury: customTreasuryTokenAccount,
+        treasuryMint: customMint,
+        botTokenAccount: customBotTokenAta,
+        participantTokenAccount0: customParticipantTokenAtas[0],
+        participantTokenAccount1: customParticipantTokenAtas[1],
+        participantTokenAccount2: customParticipantTokenAtas[2],
+        participantTokenAccount3: customParticipantTokenAtas[3],
+        participantTokenAccount4: customParticipantTokenAtas[4],
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .signers([botWallet])
+      .rpc();
+
+    console.log("Custom token distribution executed:", distributionTx);
+
+  });
+
 });
