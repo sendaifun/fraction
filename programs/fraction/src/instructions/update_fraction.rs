@@ -1,5 +1,8 @@
+use std::char::MAX;
+
 use crate::{errors::*, states::*};
 use anchor_lang::prelude::*;
+use crate::instructions::MAX_PARTICIPANTS;
 
 #[derive(Accounts)]
 pub struct UpdateFraction<'info> {
@@ -17,7 +20,7 @@ pub struct UpdateFraction<'info> {
 impl<'info> UpdateFraction<'info> {
     pub fn update_fraction(
         &mut self,
-        participants: [Participant; 5],
+        participants: [Participant; MAX_PARTICIPANTS],
         bot_wallet: Pubkey,
     ) -> Result<()> {
         let total_shares: u32 = participants.iter().map(|p| p.share_bps as u32).sum();
@@ -33,15 +36,9 @@ impl<'info> UpdateFraction<'info> {
         }
 
         // Check for duplicate participant wallets
-        let wallets = [
-            participants[0].wallet,
-            participants[1].wallet,
-            participants[2].wallet,
-            participants[3].wallet,
-            participants[4].wallet,
-        ];
-        for i in 0..5 {
-            for j in (i + 1)..5 {
+        let wallets: [Pubkey; MAX_PARTICIPANTS] = std::array::from_fn(|i| participants[i].wallet);
+        for i in 0..MAX_PARTICIPANTS {
+            for j in (i + 1)..MAX_PARTICIPANTS {
                 if wallets[i] == anchor_lang::system_program::ID || wallets[j] == anchor_lang::system_program::ID {
                     continue;
                 }

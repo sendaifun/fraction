@@ -18,7 +18,7 @@ pub mod fraction {
     pub fn initialize_fraction(
         ctx: Context<InitializeFraction>,
         name: String,
-        participants: [Participant; 5],
+        participants: [Participant; MAX_PARTICIPANTS],
         bot_wallet: Pubkey,
     ) -> Result<()> {
         ctx.accounts
@@ -27,7 +27,7 @@ pub mod fraction {
 
     pub fn update_fraction(
         ctx: Context<UpdateFraction>,
-        participants: [Participant; 5],
+        participants: [Participant; MAX_PARTICIPANTS],
         bot_wallet: Pubkey,
     ) -> Result<()> {
         ctx.accounts.update_fraction(participants, bot_wallet)

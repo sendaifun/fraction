@@ -1,6 +1,8 @@
 use crate::{errors::*, states::*};
 use anchor_lang::prelude::*;
 
+pub const MAX_PARTICIPANTS: usize = 5;
+
 #[derive(Accounts)]
 #[instruction(name: String)]
 pub struct InitializeFraction<'info> {
@@ -32,7 +34,7 @@ impl<'info> InitializeFraction<'info> {
     pub fn initialize_fraction(
         &mut self,
         name: String,
-        participants: [Participant; 5],
+        participants: [Participant; MAX_PARTICIPANTS],
         bot_wallet: Pubkey,
         bumps: &InitializeFractionBumps,
     ) -> Result<()> {
@@ -54,8 +56,8 @@ impl<'info> InitializeFraction<'info> {
             participants[3].wallet,
             participants[4].wallet,
         ];
-        for i in 0..5 {
-            for j in (i + 1)..5 {
+        for i in 0..MAX_PARTICIPANTS {
+            for j in (i + 1)..MAX_PARTICIPANTS {
                 if wallets[i] == anchor_lang::system_program::ID || wallets[j] == anchor_lang::system_program::ID {
                     continue;
                 }
