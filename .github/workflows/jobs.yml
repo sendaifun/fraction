@@ -16,6 +16,7 @@ jobs:
               run: |
                 pnpm lint
                 pnpm cargo:lint
+              shell: bash
     
     build:
         name: Build Project
@@ -27,3 +28,4 @@ jobs:
               uses: ./.github/actions/install
             - name: Build Application
               run: cargo build --release
+              shell: bash
