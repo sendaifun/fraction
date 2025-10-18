@@ -1,0 +1,16 @@
+name: Install Action
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    - name: Install Rust Toolchain
+      uses: dtolnay/rust-toolchain@stable
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 24
+        cache: "pnpm"
+    - name: Install deps
+      run: pnpm install

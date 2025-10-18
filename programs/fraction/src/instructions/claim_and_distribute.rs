@@ -79,7 +79,7 @@ impl<'info> ClaimAndDistribute<'info> {
 
         let treasury_balance = self.treasury.amount;
         require!(treasury_balance > 0, FractionError::NoFundsToDistribute);
-        return self.perform_token_distribution(treasury_balance, vault_signer);
+        self.perform_token_distribution(treasury_balance, vault_signer)
     }
 
     fn sync_native(&self) -> Result<()> {

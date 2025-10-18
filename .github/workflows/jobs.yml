@@ -1,0 +1,25 @@
+name: CI Jobs
+
+on:
+    push
+
+jobs:
+    lint:
+        name: Lint Codebase
+        runs-on: ubuntu-latest
+        steps:
+            - name: Install Dependencies
+              uses: ./.github/actions/install
+            - name: Run Linters
+              run: |
+                pnpm lint
+                pnpm cargo:lint
+    
+    build:
+        name: Build Project
+        runs-on: ubuntu-latest
+        steps:
+            - name: Install Dependencies
+              uses: ./.github/actions/install
+            - name: Build Application
+              run: cargo build --release
