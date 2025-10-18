@@ -8,6 +8,8 @@ jobs:
         name: Lint Codebase
         runs-on: ubuntu-latest
         steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v4
             - name: Install Dependencies
               uses: ./.github/actions/install
             - name: Run Linters
@@ -19,6 +21,8 @@ jobs:
         name: Build Project
         runs-on: ubuntu-latest
         steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v4
             - name: Install Dependencies
               uses: ./.github/actions/install
             - name: Build Application
