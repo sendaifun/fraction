@@ -1,7 +1,8 @@
 name: CI Jobs
 
 on:
-    push
+    push:
+    pull_request:
 
 jobs:
     lint:
