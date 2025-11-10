@@ -3,12 +3,12 @@ use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct UpdateFraction<'info> {
-    pub authority: Signer<'info>, 
+    pub authority: Signer<'info>,
 
     #[account(
         mut,
         seeds = [b"fraction_config", fraction_config.authority.key().as_ref(), fraction_config.name.as_ref()],
-        bump = fraction_config.config_bump,   
+        bump = fraction_config.config_bump,
         has_one = authority,
     )]
     pub fraction_config: Box<Account<'info, FractionConfig>>,
@@ -42,7 +42,9 @@ impl<'info> UpdateFraction<'info> {
         ];
         for i in 0..5 {
             for j in (i + 1)..5 {
-                if wallets[i] == anchor_lang::system_program::ID || wallets[j] == anchor_lang::system_program::ID {
+                if wallets[i] == anchor_lang::system_program::ID
+                    || wallets[j] == anchor_lang::system_program::ID
+                {
                     continue;
                 }
                 require!(

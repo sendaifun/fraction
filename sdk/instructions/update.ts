@@ -1,4 +1,11 @@
-import { Connection, PublicKey, SystemProgram, Transaction, TransactionMessage, VersionedTransaction } from "@solana/web3.js";
+import {
+  Connection,
+  PublicKey,
+  SystemProgram,
+  Transaction,
+  TransactionMessage,
+  VersionedTransaction,
+} from "@solana/web3.js";
 import { programId } from "../shared/client";
 import { CreatorFractionInputArgs, UpdateFractionInputArgs } from "../types";
 import { getFractionsByConfig } from "../state";
@@ -10,41 +17,48 @@ import { Fraction } from "../shared/idl";
  * @param input - The input arguments for creating a fraction
  * @returns The instruction
  */
-async function updateFractionIx(program: Program<Fraction>, config: PublicKey, input: UpdateFractionInputArgs) {
+async function updateFractionIx(
+  program: Program<Fraction>,
+  config: PublicKey,
+  input: UpdateFractionInputArgs
+) {
+  const { participants } = input;
+  let botWallet = input.botWallet;
 
-    const { participants } = input;
-    let botWallet = input.botWallet;
+  const fraction = await getFractionsByConfig(program, config);
 
-    const fraction = await getFractionsByConfig(program, config)
+  if (!fraction) {
+    throw new Error("Fraction not found");
+  }
 
-    if (!fraction) {
-        throw new Error("Fraction not found")
+  if (!botWallet) {
+    botWallet = fraction.botWallet;
+  }
+
+  participants.forEach((participant) => {
+    if (!participant.wallet) {
+      throw new Error("Participant wallet is required");
     }
 
-    if (!botWallet) {
-        botWallet = fraction.botWallet;
-    }
+    if (
+      participant.wallet == SystemProgram.programId &&
+      participant.shareBps != 0
+    )
+      throw new Error("System program cannot have a share");
 
-    participants.forEach(participant => {
-        if (!participant.wallet) {
-            throw new Error("Participant wallet is required")
-        }
+    if (participant.shareBps > 10000)
+      throw new Error("Share cannot be greater than 10000");
+  });
 
-        if (participant.wallet == SystemProgram.programId && participant.shareBps != 0)
-            throw new Error("System program cannot have a share")
-
-        if (participant.shareBps > 10000)
-            throw new Error("Share cannot be greater than 10000")
+  const ix = await program.methods
+    .updateFraction(fraction.participants, fraction.botWallet)
+    .accountsStrict({
+      authority: fraction.authority,
+      fractionConfig: config,
     })
+    .instruction();
 
-    const ix = await program.methods.updateFraction(
-        fraction.participants, fraction.botWallet
-    ).accountsStrict({
-        authority: fraction.authority,
-        fractionConfig: config,
-    }).instruction()
-
-    return ix
+  return ix;
 }
 
 /**
@@ -55,23 +69,29 @@ async function updateFractionIx(program: Program<Fraction>, config: PublicKey, i
  * @param payer - The payer for the transaction
  * @returns The transaction
  */
-async function updateFraction(program: Program<Fraction>, config: PublicKey, input: UpdateFractionInputArgs, connection?: Connection, payer?: PublicKey) {
-    const ix = await updateFractionIx(program, config, input)
+async function updateFraction(
+  program: Program<Fraction>,
+  config: PublicKey,
+  input: UpdateFractionInputArgs,
+  connection?: Connection,
+  payer?: PublicKey
+) {
+  const ix = await updateFractionIx(program, config, input);
 
-    if (connection && payer) {
-        const { blockhash } = await connection.getLatestBlockhash()
-        const messageV0 = new TransactionMessage({
-            payerKey: payer, // PublicKey of the fee payer
-            recentBlockhash: blockhash,
-            instructions: [ix],
-        }).compileToV0Message();
+  if (connection && payer) {
+    const { blockhash } = await connection.getLatestBlockhash();
+    const messageV0 = new TransactionMessage({
+      payerKey: payer, // PublicKey of the fee payer
+      recentBlockhash: blockhash,
+      instructions: [ix],
+    }).compileToV0Message();
 
-        const tx = new VersionedTransaction(messageV0)
-        return tx
-    } else {
-        const tx = new Transaction().add(ix)
-        return tx
-    }
+    const tx = new VersionedTransaction(messageV0);
+    return tx;
+  } else {
+    const tx = new Transaction().add(ix);
+    return tx;
+  }
 }
 
-export { updateFraction, updateFractionIx }
+export { updateFraction, updateFractionIx };

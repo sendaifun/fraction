@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [main, develop]
+
+env:
+  CARGO_TERM_COLOR: always
+  SOLANA_VERSION: stable
+  RUST_TOOLCHAIN: stable
+
+jobs:
+  lint-rust:
+    name: Lint Rust Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        uses: ./.github/actions/install
+
+      - name: Run cargo fmt check
+        run: cargo fmt -- --check
+
+      - name: Run cargo clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+  lint-typescript:
+    name: Lint TypeScript Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        uses: ./.github/actions/install
+
+      - name: Run prettier check
+        run: pnpm lint
+
+      - name: Run cargo lint (via npm script)
+        run: pnpm lint:cargo
+
+  build-rust:
+    name: Build Rust Program
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        uses: ./.github/actions/install
+
+      - name: Build Anchor program
+        run: anchor build
+
+      - name: Run cargo test
+        run: cargo test --all-features
+
+  # Uncomment when Anchor tests are ready
+  # test-anchor:
+  #   name: Run Anchor Tests
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Install dependencies
+  #       uses: ./.github/actions/install
+  #
+  #     - name: Start local validator
+  #       run: solana-test-validator --quiet &
+  #
+  #     - name: Wait for validator
+  #       run: sleep 10
+  #
+  #     - name: Run Anchor tests
+  #       run: anchor test --skip-local-validator
+
+  all-checks:
+    name: All Checks Passed
+    needs: [lint-rust, lint-typescript, build-rust]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Success
+        run: echo "All CI checks passed successfully!"
