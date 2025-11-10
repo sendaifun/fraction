@@ -1,18 +1,8 @@
-import {
-  Connection,
-  PublicKey,
-  SystemProgram,
-  Transaction,
-  TransactionMessage,
-  VersionedTransaction,
-} from "@solana/web3.js";
-import { programId } from "../shared/client";
+import { Connection, PublicKey, SystemProgram, Transaction, TransactionMessage, VersionedTransaction } from "@solana/web3.js";
+import  { programId } from "../shared/client";
 import { CreatorFractionInputArgs, UpdateFractionInputArgs } from "../types";
 import { getFractionsByConfig } from "../state";
-import {
-  getAssociatedTokenAddressSync,
-  TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
+import { getAssociatedTokenAddressSync, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { Fraction } from "../shared/idl";
 import { Program } from "@coral-xyz/anchor";
 
@@ -21,65 +11,63 @@ import { Program } from "@coral-xyz/anchor";
  * @param input - The input arguments for creating a fraction
  * @returns The instruction
  */
-async function claimAndDistributeIx(
-  program: Program<Fraction>,
-  config: PublicKey,
-  mint: PublicKey
-) {
-  const fraction = await getFractionsByConfig(program, config);
+async function claimAndDistributeIx(program: Program<Fraction>, config: PublicKey, mint: PublicKey) {
 
-  if (!fraction) {
-    throw new Error("Fraction not found");
-  }
 
-  const treasuryAssociatedTokenAccount = getAssociatedTokenAddressSync(
-    mint,
-    config,
-    true
-  );
+    const fraction = await getFractionsByConfig(program, config)
 
-  const participantsAssociatedTokenAccount = fraction.participants.map(
-    (participant) => {
-      return getAssociatedTokenAddressSync(mint, participant.wallet, true);
+    if (!fraction) {
+        throw new Error("Fraction not found")
     }
-  );
 
-  const botAssociatedTokenAccount = getAssociatedTokenAddressSync(
-    mint,
-    fraction.botWallet,
-    true
-  );
+    const treasuryAssociatedTokenAccount = getAssociatedTokenAddressSync(
+        mint,
+        config,
+        true
+    )
 
-  const [fractionVaultPda] = PublicKey.findProgramAddressSync(
-    [
-      Buffer.from("fraction_vault"),
-      fraction.authority.toBuffer(),
-      Buffer.from(fraction.name),
-    ],
-    program.programId
-  );
+    const participantsAssociatedTokenAccount = 
+        fraction.participants.map((participant) => {
+            return getAssociatedTokenAddressSync(
+                mint,
+                participant.wallet,
+                true
+            )
+        })
 
-  const ix = await program.methods
-    .claimAndDistribute()
-    .accountsStrict({
-      authority: fraction.authority,
-      botWallet: fraction.botWallet,
-      fractionConfig: config,
-      fractionVault: fractionVaultPda,
-      treasury: treasuryAssociatedTokenAccount,
-      treasuryMint: mint,
-      botTokenAccount: botAssociatedTokenAccount,
-      participantTokenAccount0: participantsAssociatedTokenAccount[0],
-      participantTokenAccount1: participantsAssociatedTokenAccount[1],
-      participantTokenAccount2: participantsAssociatedTokenAccount[2],
-      participantTokenAccount3: participantsAssociatedTokenAccount[3],
-      participantTokenAccount4: participantsAssociatedTokenAccount[4],
-      tokenProgram: TOKEN_PROGRAM_ID,
-      systemProgram: SystemProgram.programId,
-    })
-    .instruction();
+    const botAssociatedTokenAccount = getAssociatedTokenAddressSync(
+        mint,
+        fraction.botWallet,
+        true
+    )
 
-  return ix;
+    const [fractionVaultPda] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("fraction_vault"),
+          fraction.authority.toBuffer(),
+          Buffer.from(fraction.name),
+        ],
+        program.programId
+      );
+
+    const ix = await program.methods.claimAndDistribute().accountsStrict({
+        authority: fraction.authority,
+        botWallet: fraction.botWallet,
+        fractionConfig: config,
+        fractionVault: fractionVaultPda,
+        treasury: treasuryAssociatedTokenAccount,
+        treasuryMint: mint,
+        botTokenAccount: botAssociatedTokenAccount,
+        participantTokenAccount0: participantsAssociatedTokenAccount[0],
+        participantTokenAccount1: participantsAssociatedTokenAccount[1],
+        participantTokenAccount2: participantsAssociatedTokenAccount[2],
+        participantTokenAccount3: participantsAssociatedTokenAccount[3],
+        participantTokenAccount4: participantsAssociatedTokenAccount[4],
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+    }).instruction()
+
+    return ix
 }
 
 /**
@@ -90,29 +78,23 @@ async function claimAndDistributeIx(
  * @param payer - The payer for the transaction
  * @returns The transaction
  */
-async function claimAndDistribute(
-  program: Program<Fraction>,
-  config: PublicKey,
-  mint: PublicKey,
-  connection?: Connection,
-  payer?: PublicKey
-) {
-  const ix = await claimAndDistributeIx(program, config, mint);
+async function claimAndDistribute(program: Program<Fraction>, config: PublicKey, mint: PublicKey, connection?: Connection, payer?: PublicKey) {
+    const ix = await claimAndDistributeIx(program, config, mint)
 
-  if (connection && payer) {
-    const { blockhash } = await connection.getLatestBlockhash();
-    const messageV0 = new TransactionMessage({
-      payerKey: payer, // PublicKey of the fee payer
-      recentBlockhash: blockhash,
-      instructions: [ix],
-    }).compileToV0Message();
+    if (connection && payer) {
+        const { blockhash } = await connection.getLatestBlockhash()
+        const messageV0 = new TransactionMessage({
+            payerKey: payer, // PublicKey of the fee payer
+            recentBlockhash: blockhash,
+            instructions: [ix],
+        }).compileToV0Message();
 
-    const tx = new VersionedTransaction(messageV0);
-    return tx;
-  } else {
-    const tx = new Transaction().add(ix);
-    return tx;
-  }
+        const tx = new VersionedTransaction(messageV0)
+        return tx
+    } else {
+        const tx = new Transaction().add(ix)
+        return tx
+    }
 }
 
-export { claimAndDistribute, claimAndDistributeIx };
+export { claimAndDistribute, claimAndDistributeIx }
