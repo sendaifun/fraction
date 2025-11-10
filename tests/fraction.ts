@@ -43,8 +43,8 @@ describe("Fraction Program - Dual PDA Distribution", () => {
 
   // Test setup - Dual PDA structure
   let fractionName: string;
-  let fractionConfigPda: PublicKey;  // Program-owned PDA (stores data)
-  let fractionVaultPda: PublicKey;  // System-owned PDA (holds assets)
+  let fractionConfigPda: PublicKey; // Program-owned PDA (stores data)
+  let fractionVaultPda: PublicKey; // System-owned PDA (holds assets)
   let testParticipants: any[];
 
   // Helper function to clean up treasury
@@ -206,8 +206,12 @@ describe("Fraction Program - Dual PDA Distribution", () => {
     console.log("Initialize transaction:", tx);
 
     // Verify config was created
-    const configAccount = await program.account.fractionConfig.fetch(fractionConfigPda);
-    expect(configAccount.authority.toString()).to.equal(authority.publicKey.toString());
+    const configAccount = await program.account.fractionConfig.fetch(
+      fractionConfigPda
+    );
+    expect(configAccount.authority.toString()).to.equal(
+      authority.publicKey.toString()
+    );
     expect(configAccount.name).to.equal(fractionName);
     console.log("Config account created successfully");
     console.log("Vault bump stored in config:", configAccount.vaultBump);
@@ -616,7 +620,9 @@ describe("Fraction Program - Dual PDA Distribution", () => {
       expect.fail("Distribution should have failed");
     } catch (error) {
       expect(error.message).to.include("SystemProgramParticipant");
-      console.log("Correctly rejected distribution with System Program participant > 0 share");
+      console.log(
+        "Correctly rejected distribution with System Program participant > 0 share"
+      );
     }
   });
 
@@ -667,7 +673,10 @@ describe("Fraction Program - Dual PDA Distribution", () => {
       .signers([botWallet])
       .rpc();
 
-    console.log("Distribution succeeded with zero-share System Program participant:", tx);
+    console.log(
+      "Distribution succeeded with zero-share System Program participant:",
+      tx
+    );
   });
 
   it("Should fail with duplicate participant wallets", async () => {
@@ -725,9 +734,9 @@ describe("Fraction Program - Dual PDA Distribution", () => {
     const multiSystemParticipants = [
       { wallet: participants[0].publicKey, shareBps: 5000 }, // 50%
       { wallet: participants[1].publicKey, shareBps: 5000 }, // 50%
-      { wallet: SystemProgram.programId, shareBps: 0 },      // 0% - System Program
-      { wallet: SystemProgram.programId, shareBps: 0 },      // 0% - System Program (duplicate)
-      { wallet: SystemProgram.programId, shareBps: 0 },      // 0% - System Program (another duplicate)
+      { wallet: SystemProgram.programId, shareBps: 0 }, // 0% - System Program
+      { wallet: SystemProgram.programId, shareBps: 0 }, // 0% - System Program (duplicate)
+      { wallet: SystemProgram.programId, shareBps: 0 }, // 0% - System Program (another duplicate)
     ];
 
     await program.methods
@@ -738,7 +747,9 @@ describe("Fraction Program - Dual PDA Distribution", () => {
       })
       .rpc();
 
-    console.log("Successfully updated fraction with multiple System Program participants with zero shares");
+    console.log(
+      "Successfully updated fraction with multiple System Program participants with zero shares"
+    );
 
     // Test that distribution still works
     await cleanupTreasury();
@@ -771,7 +782,10 @@ describe("Fraction Program - Dual PDA Distribution", () => {
       .signers([botWallet])
       .rpc();
 
-    console.log("Distribution succeeded with multiple System Program participants:", tx);
+    console.log(
+      "Distribution succeeded with multiple System Program participants:",
+      tx
+    );
   });
 
   it("Should handle custom token distribution with dual PDA structure", async () => {
@@ -877,7 +891,10 @@ describe("Fraction Program - Dual PDA Distribution", () => {
       )
     ).address;
 
-    console.log("Custom token treasury account created:", customTreasuryTokenAccount.toString());
+    console.log(
+      "Custom token treasury account created:",
+      customTreasuryTokenAccount.toString()
+    );
 
     // Mint custom tokens to authority
     const customTokenAmount = 5000000000; // 5B custom tokens
@@ -927,7 +944,5 @@ describe("Fraction Program - Dual PDA Distribution", () => {
       .rpc();
 
     console.log("Custom token distribution executed:", distributionTx);
-
   });
-
 });
