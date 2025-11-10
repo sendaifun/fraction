@@ -13,7 +13,7 @@ pub struct ClaimAndDistribute<'info> {
 
     /// CHECK:
     pub authority: UncheckedAccount<'info>,
-    
+
     #[account(
         mut,
         seeds = [b"fraction_config", fraction_config.authority.key().as_ref(), fraction_config.name.as_ref()],
@@ -31,15 +31,15 @@ pub struct ClaimAndDistribute<'info> {
     pub fraction_vault: SystemAccount<'info>,
 
     #[account(
-        mut, 
-        associated_token::mint = treasury_mint, 
+        mut,
+        associated_token::mint = treasury_mint,
         associated_token::authority = fraction_vault,
         associated_token::token_program = token_program
     )]
     pub treasury: InterfaceAccount<'info, TokenAccount>,
 
     pub treasury_mint: InterfaceAccount<'info, Mint>,
-    
+
     #[account(mut, token::mint = treasury_mint.key(),constraint = bot_token_account.owner == bot_wallet.key() @ FractionError::InvalidAccount)]
     pub bot_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(mut, token::mint = treasury_mint.key(),constraint = participant_token_account_0.owner == fraction_config.participants[0].wallet @ FractionError::InvalidAccount)]
@@ -79,7 +79,7 @@ impl<'info> ClaimAndDistribute<'info> {
 
         let treasury_balance = self.treasury.amount;
         require!(treasury_balance > 0, FractionError::NoFundsToDistribute);
-        return self.perform_token_distribution(treasury_balance, vault_signer);
+        self.perform_token_distribution(treasury_balance, vault_signer)
     }
 
     fn sync_native(&self) -> Result<()> {
@@ -92,7 +92,11 @@ impl<'info> ClaimAndDistribute<'info> {
         Ok(())
     }
 
-    fn perform_token_distribution(&self, treasury_balance: u64, vault_signer: &[&[&[u8]]]) -> Result<()> {
+    fn perform_token_distribution(
+        &self,
+        treasury_balance: u64,
+        vault_signer: &[&[&[u8]]],
+    ) -> Result<()> {
         let bot_amount = treasury_balance
             .checked_mul(self.fraction_config.incentive_bps as u64)
             .and_then(|x| x.checked_div(10_000))
